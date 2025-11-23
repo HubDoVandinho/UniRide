@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <main class="container">
+
+        <div>
+            <div class="box-titulo">
+                <h1 class="titulo">Entrar</h1>
+            </div>
+
+            <form class="upload-container login-box">
+                <div class="input-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" placeholder="Digite seu e-mail" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="senha">Senha</label>
+                    <div class="senha-container">
+                        <input type="password" id="senha" placeholder="Digite sua senha" required>
+                        <i id="toggleSenha" class="ri-eye-close-line"></i>
+                    </div>
+                </div>
+
+                <button class="btn" id="btnLogin">Entrar</button>
+            </form>
+
+            <div class="links-recuperacao">
+                <a href="telaEsqueciMinhSenha.html" class="cadastro">Esqueci minha senha.</a>
+                <p>Não possui uma conta? <a href="telaCadastroPassageiro.html" class="cadastro">Cadastre-se.</a></p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const senhaInput = document.getElementById("senha");
+        const toggleSenha = document.getElementById("toggleSenha");
+
+        toggleSenha.addEventListener("click", () => {
+            const type = senhaInput.type === "password" ? "text" : "password";
+            senhaInput.type = type;
+            toggleSenha.classList.toggle("ri-eye-line");
+            toggleSenha.classList.toggle("ri-eye-close-line");
+        });
+    </script>
+
+    <script type="module">
+        import { auth } from "./js/firebase.js";
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+        document.getElementById("btnLogin").addEventListener("click", async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById("email").value.trim();
+            const senha = document.getElementById("senha").value.trim();
+
+            if (!email || !senha) {
+                alert("Preencha todos os campos.");
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, senha);
+                window.location.href = "telaPrincipal.html";
+            } catch (err) {
+                console.error(err);
+
+                if (err.code === "auth/wrong-password") {
+                    alert("Senha incorreta.");
+                } else if (err.code === "auth/user-not-found") {
+                    alert("Usuário não encontrado.");
+                } else {
+                    alert("Erro ao fazer login: " + err.message);
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+    <main class="container">
+
+        <div class="btn-voltar">
+            <a href="telaLogin.html" class="ri-arrow-left-line"></a>
+        </div>
+
+        <div>
+            <div class="box-titulo">
+                <h1 class="titulo">Esqueci minha senha</h1>
+            </div>
+            <form class="upload-container login-box">
+                <div class="input-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" placeholder="Digite seu e-mail" required>
+                </div>
+
+                <button class="btn" id="btnEsqueciSenha">Enviar Email</button>
+            </form>
+
+            <div class="links-recuperacao">
+                <p>Não possui uma conta? <a href="telaCadastroPassageiro.html" class="cadastro">Cadastre-se.</a></p>
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script type="module">
+
+        import { auth } from "./js/firebase.js";
+        import {
+            signInWithEmailAndPassword,
+            sendPasswordResetEmail
+        } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+        /* ESQUECI MINHA SENHA ---------------- */
+        document.getElementById("btnEsqueciSenha").addEventListener("click", async () => {
+
+            const email = document.getElementById("email").value.trim();
+
+            if (!email) {
+                alert("Digite seu email para recuperar a senha.");
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("Um link para redefinir a senha foi enviado para: " + email);
+            } catch (err) {
+
+                if (err.code === "auth/user-not-found") {
+                    alert("Nenhum usuário registrado com este email.");
+                } else {
+                    alert("Erro ao enviar email: " + err.message);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

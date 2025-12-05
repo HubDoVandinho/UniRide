@@ -545,3 +545,45 @@ a {
     background: #ff3b3b;
     color: #fff;
 }
+
+.btn-danger {
+    background: #ff3b3b !important;
+    margin-top: 15px;
+}
+
+.btn-danger:hover {
+    background: #d32f2f !important;
+}
+
+/* Botão Roxo (Ação Secundária) */
+.btn-secondary {
+    background: #6c23b8 !important;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    padding: 12px;
+    border-radius: 25px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background: #561b94 !important;
+}
+
+/* Estilo para labels dos documentos */
+.doc-label {
+    font-size: 14px;
+    color: #ddd;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Container de cada documento */
+.box-doc {
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+}

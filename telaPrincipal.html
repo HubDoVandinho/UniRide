@@ -4,15 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página Motoristas</title>
+    <title>Página Principal</title>
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
     <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+
 </head>
 
 <body>
 
+    <!-- BARRA DE PESQUISA SUPERIOR -->
     <header class="top-bar">
         <div class="search-box">
             <i class="ri-search-line" id="searchBtn"></i>
@@ -20,10 +22,12 @@
         </div>
     </header>
 
+    <!-- MAPA -->
     <section class="map">
         <div id="map"></div>
     </section>
 
+    <!-- MENU INFERIOR -->
     <footer class="bottom-menu">
         <div class="menu-item">
             <i class="ri-discuss-fill"></i>
@@ -46,8 +50,10 @@
         </div>
     </footer>
 
+    <!-- OVERLAY ESCURO DO PERFIL -->
     <div id="perfilOverlay"></div>
 
+    <!-- PAINEL DESLIZANTE DO PERFIL -->
     <div class="backgroud" id="perfilPanel">
         <div class="container">
 
@@ -61,34 +67,75 @@
                     <h1 class="titulo">Meu Perfil</h1>
                 </div>
 
+                <!-- FOTO DE PERFIL -->
                 <div id="areaFotoPerfil" style="text-align:center; margin-bottom:10px;"></div>
 
+                <!-- FORMULÁRIO: DADOS PESSOAIS -->
                 <form class="upload-container form-login">
                     <h2>Dados do Usuário</h2>
-
                     <label>Nome</label>
                     <input type="text" id="Nome" disabled>
-
                     <label>Sobrenome</label>
                     <input type="text" id="Sobrenome" disabled>
-
                     <label>E-mail</label>
                     <input type="email" id="email" disabled>
-
                     <label>Data de Nascimento</label>
                     <input type="text" id="dataNascimento" disabled>
-
                     <label>Telefone</label>
                     <input type="text" id="telefone" disabled>
                 </form>
 
+                <!-- LÓGICA DO MOTORISTA -->
 
+                <!-- CASO 1: USUÁRIO É MOTORISTA (Vê documentos e botão de excluir motorista) -->
+                <div id="containerMotorista" style="display: none;">
+                    <div class="upload-container form-login">
+                        <h2>Documentação Motorista</h2>
+
+                        <div class="box-doc">
+                            <span class="doc-label">CNH com EAR</span>
+                            <img id="viewCNH" class="upload-img" src="" alt="CNH">
+                        </div>
+
+                        <div class="box-doc">
+                            <span class="doc-label">Documento do Veículo</span>
+                            <img id="viewDocCarro" class="upload-img" src="" alt="Doc Carro">
+                        </div>
+
+                        <div class="box-doc">
+                            <span class="doc-label">Seguro do Veículo</span>
+                            <img id="viewSeguro" class="upload-img" src="" alt="Seguro">
+                        </div>
+
+                        <div class="box-doc">
+                            <span class="doc-label">Selfie com CNH</span>
+                            <img id="viewSelfie" class="upload-img" src="" alt="Selfie">
+                        </div>
+
+                        <button type="button" id="btnExcluirMotorista" class="btn btn-danger">
+                            Excluir conta de Motorista
+                        </button>
+                        <p style="font-size: 12px; text-align: center; margin-top: 10px; color: #ffcccc;">
+                            Isso removerá seus privilégios de motorista, mas manterá sua conta de passageiro.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- CASO 2: USUÁRIO NÃO É MOTORISTA (Vê botão para se cadastrar) -->
+                <div id="boxQueroSerMotorista" style="display: none; margin-bottom: 30px;">
+                    <div class="upload-container form-login" style="text-align: center;">
+                        <h2>Seja um Motorista</h2>
+                        <p style="margin-bottom: 15px;">Cadastre sua documentação e comece a oferecer caronas.</p>
+                        <a href="telaCadastroMotorista.html" class="btn-secondary">Quero ser Motorista</a>
+                    </div>
+                </div>
+
+
+                <!-- FORMULÁRIO: ENDEREÇO -->
                 <form class="upload-container form-login">
                     <h2>Endereço</h2>
-
                     <label>Rua</label>
                     <input type="text" id="rua" disabled>
-
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;">
                             <label>Número</label>
@@ -101,20 +148,18 @@
                     </div>
                 </form>
 
-
+                <!-- FORMULÁRIO: FINANCEIRO -->
                 <form class="upload-container form-login">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 style="padding-bottom: 0; margin: 0;">Dados Financeiros</h2>
-
-                        <i id="btnToggleFinanceiro" class="ri-eye-close-line" style="font-size: 24px; cursor: pointer; color: #fff;"></i>
+                        <i id="btnToggleFinanceiro" class="ri-eye-close-line"
+                            style="font-size: 24px; cursor: pointer; color: #fff;"></i>
                     </div>
-
                     <label>Titular do Cartão</label>
                     <input type="text" id="titularCartao" disabled>
-
                     <label>Número do Cartão</label>
                     <input type="password" id="numeroCartao" disabled>
-
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;">
                             <label>Validade</label>
@@ -122,11 +167,12 @@
                         </div>
                         <div style="flex: 1;">
                             <label>CVV</label>
-                            <input type="password" id="cvvCartao" disabled> 
+                            <input type="password" id="cvvCartao" disabled>
                         </div>
                     </div>
                 </form>
 
+                <!-- FORMULÁRIO: PREFERÊNCIAS E SOBRE -->
                 <form class="upload-container form-login">
                     <label>Sobre Você</label>
                     <textarea maxlength="450" id="sobreVoce" class="sobreVoce"></textarea>
@@ -135,22 +181,26 @@
                 <form class="upload-container form-login">
                     <label>Preferências</label>
                     <ul id="listaPreferencias" class="lista-preferencias"></ul>
-
                     <div class="preferencias-input">
                         <input type="text" id="inputPreferencia" placeholder="Digite uma preferência">
                     </div>
-
                     <button id="btnAddPreferencia" class="btn">Adicionar</button>
                 </form>
 
+                <!-- BOTÕES DE AÇÃO DA CONTA -->
                 <button id="btnLogout" class="btn logout">Sair da conta</button>
+
+                <button id="btnExcluirContaGeral" class="btn btn-danger" style="margin-bottom: 50px;">Excluir minha
+                    conta</button>
 
             </section>
         </div>
     </div>
 
+    <!-- BIBLIOTECA DE MAPA -->
     <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
 
+    <!-- SCRIPT DO MAPA -->
     <script>
         const LOCATIONIQ_KEY = "pk.f8b960416f38b6f9f963fa31b83e43d7";
 
@@ -200,7 +250,7 @@
         }
 
         async function searchLocation() {
-            let input = searchInput.value.trim();
+            let input = document.getElementById("searchInput").value.trim();
             if (!input) return;
 
             const url = `https://us1.locationiq.com/v1/search.php?key=${LOCATIONIQ_KEY}&q=${encodeURIComponent(input)}&format=json&limit=1`;
@@ -223,20 +273,24 @@
         }
     </script>
 
+    <!-- SCRIPT DO FIREBASE + LÓGICA DE PERFIL E EXCLUSÃO -->
     <script type="module">
-        import { db, auth } from "./js/firebase.js"; 
-        
+        import { db, auth } from "./js/firebase.js";
+
         import {
             doc,
             getDoc,
-            updateDoc
+            updateDoc,
+            deleteDoc
         } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
         import {
             onAuthStateChanged,
-            signOut
+            signOut,
+            deleteUser
         } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 
+        // Referências DOM - Passageiro
         const elNome = document.getElementById("Nome");
         const elSobrenome = document.getElementById("Sobrenome");
         const elEmail = document.getElementById("email");
@@ -257,17 +311,32 @@
         const elListaPreferencias = document.getElementById("listaPreferencias");
         const elAreaFoto = document.getElementById("areaFotoPerfil");
 
+        // Referências DOM - Motorista
+        const containerMotorista = document.getElementById("containerMotorista");
+        const boxQueroSerMotorista = document.getElementById("boxQueroSerMotorista");
+        const imgCNH = document.getElementById("viewCNH");
+        const imgDocCarro = document.getElementById("viewDocCarro");
+        const imgSeguro = document.getElementById("viewSeguro");
+        const imgSelfie = document.getElementById("viewSelfie");
+        const btnExcluirMotorista = document.getElementById("btnExcluirMotorista");
+
+        // Referência DOM - Exclusão Geral
+        const btnExcluirContaGeral = document.getElementById("btnExcluirContaGeral");
+
+        // Verifica autenticação
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                location.href = "telaLogin.html";
+                location.href = "index.html";
             }
         });
 
+        // Função Principal: Carregar Dados
         async function carregarPerfil() {
             const uid = auth.currentUser?.uid;
             if (!uid) return;
 
             try {
+                // 1. Carrega Passageiro
                 const docRef = doc(db, "passageiros", uid);
                 const snap = await getDoc(docRef);
 
@@ -278,25 +347,27 @@
 
                 const dados = snap.data();
 
-                if(elNome) elNome.value = dados.nome || "";
-                if(elSobrenome) elSobrenome.value = dados.sobrenome || "";
-                if(elEmail) elEmail.value = dados.email || auth.currentUser.email || "";
-                if(elNascimento) elNascimento.value = dados.dataNascimento || "";
-                if(elTelefone) elTelefone.value = dados.telefone || "";
+                // Preencher campos
+                if (elNome) elNome.value = dados.nome || "";
+                if (elSobrenome) elSobrenome.value = dados.sobrenome || "";
+                if (elEmail) elEmail.value = dados.email || auth.currentUser.email || "";
+                if (elNascimento) elNascimento.value = dados.dataNascimento || "";
+                if (elTelefone) elTelefone.value = dados.telefone || "";
 
                 const endereco = dados.endereco || {};
-                if(elRua) elRua.value = endereco.rua || "";
-                if(elNumero) elNumero.value = endereco.numero || "";
-                if(elComplemento) elComplemento.value = endereco.complemento || "";
+                if (elRua) elRua.value = endereco.rua || "";
+                if (elNumero) elNumero.value = endereco.numero || "";
+                if (elComplemento) elComplemento.value = endereco.complemento || "";
 
                 const cartao = dados.cartao || {};
-                if(elTitular) elTitular.value = cartao.titular || "";
-                if(elNumCartao) elNumCartao.value = cartao.numero || "";
-                if(elValidade) elValidade.value = cartao.validade || "";
-                if(elCvv) elCvv.value = cartao.cvv || "";
+                if (elTitular) elTitular.value = cartao.titular || "";
+                if (elNumCartao) elNumCartao.value = cartao.numero || "";
+                if (elValidade) elValidade.value = cartao.validade || "";
+                if (elCvv) elCvv.value = cartao.cvv || "";
 
-                if(elSobreVoce) elSobreVoce.value = dados.sobreVoce || "";
+                if (elSobreVoce) elSobreVoce.value = dados.sobreVoce || "";
 
+                // Foto
                 if (elAreaFoto) {
                     elAreaFoto.innerHTML = "";
                     if (dados.fotoPerfilURL) {
@@ -313,10 +384,10 @@
                     }
                 }
 
+                // Preferências
                 if (elListaPreferencias) {
                     elListaPreferencias.innerHTML = "";
                     const prefs = dados.preferencias || [];
-                    
                     if (prefs.length === 0) {
                         elListaPreferencias.innerHTML = "<li style='opacity:0.7'>Nenhuma preferência.</li>";
                     } else {
@@ -324,14 +395,111 @@
                     }
                 }
 
+                // 2. Verifica se é Motorista
+                const docMotoristaRef = doc(db, "motoristas", uid);
+                const snapMotorista = await getDoc(docMotoristaRef);
+
+                // Se existe doc motorista E a flag está true
+                if (snapMotorista.exists() && dados.isMotorista) {
+                    containerMotorista.style.display = "block";
+                    boxQueroSerMotorista.style.display = "none";
+
+                    const dadosMoto = snapMotorista.data();
+                    imgCNH.src = dadosMoto.cnh || "";
+                    imgDocCarro.src = dadosMoto.docCarro || "";
+                    imgSeguro.src = dadosMoto.seguro || "";
+                    imgSelfie.src = dadosMoto.selfie || "";
+                } else {
+                    containerMotorista.style.display = "none";
+                    boxQueroSerMotorista.style.display = "block";
+                }
+
             } catch (error) {
                 console.error("Erro ao carregar perfil:", error);
             }
         }
 
+        // --- EXCLUIR APENAS MOTORISTA ---
+        btnExcluirMotorista.onclick = async () => {
+            const confirmacao = confirm("Tem certeza que deseja excluir sua conta de MOTORISTA? Sua conta de passageiro continuará ativa.");
+            if (!confirmacao) return;
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) return;
+
+            try {
+                btnExcluirMotorista.innerText = "Excluindo...";
+                btnExcluirMotorista.disabled = true;
+
+                // Deleta doc motorista
+                await deleteDoc(doc(db, "motoristas", uid));
+
+                // Atualiza passageiro para false
+                await updateDoc(doc(db, "passageiros", uid), {
+                    isMotorista: false
+                });
+
+                alert("Conta de motorista excluída com sucesso.");
+
+                // Atualiza tela
+                containerMotorista.style.display = "none";
+                boxQueroSerMotorista.style.display = "block";
+                btnExcluirMotorista.innerText = "Excluir conta de Motorista";
+                btnExcluirMotorista.disabled = false;
+
+            } catch (error) {
+                console.error("Erro ao excluir motorista:", error);
+                alert("Erro: " + error.message);
+                btnExcluirMotorista.disabled = false;
+            }
+        };
+
+        // --- EXCLUIR CONTA GERAL (TUDO) ---
+        btnExcluirContaGeral.onclick = async () => {
+            const confirmacao = confirm("ATENÇÃO: Você tem certeza que deseja EXCLUIR PERMANENTEMENTE sua conta? Todos os seus dados de passageiro e motorista serão perdidos.");
+
+            if (!confirmacao) return;
+
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                btnExcluirContaGeral.innerText = "Excluindo...";
+                btnExcluirContaGeral.disabled = true;
+
+                // 1. Tenta apagar doc motorista se existir
+                try {
+                    await deleteDoc(doc(db, "motoristas", user.uid));
+                } catch (e) { console.log("Sem perfil motorista ou erro ao apagar:", e); }
+
+                // 2. Apaga doc passageiro
+                await deleteDoc(doc(db, "passageiros", user.uid));
+
+                // 3. Apaga Usuário da Auth
+                await deleteUser(user);
+
+                alert("Sua conta foi excluída.");
+                location.href = "index.html";
+
+            } catch (error) {
+                console.error("Erro ao excluir conta geral:", error);
+                if (error.code === 'auth/requires-recent-login') {
+                    alert("Por segurança, faça login novamente antes de excluir sua conta.");
+                    await signOut(auth);
+                    location.href = "index.html";
+                } else {
+                    alert("Erro ao excluir conta: " + error.message);
+                    btnExcluirContaGeral.innerText = "Excluir minha conta";
+                    btnExcluirContaGeral.disabled = false;
+                }
+            }
+        };
+
+        // --- UTILITÁRIOS ---
+
+        // Criar tag de preferência
         function criarElementoPreferencia(texto) {
             const li = document.createElement("li");
-
             li.style.display = "inline-flex";
             li.style.alignItems = "center";
             li.style.gap = "8px";
@@ -349,85 +517,64 @@
             iconRemove.style.cursor = "pointer";
             iconRemove.style.fontSize = "16px";
             iconRemove.style.color = "#ffcccc";
-            iconRemove.title = "Remover preferência";
 
             iconRemove.onclick = async () => {
                 const uid = auth.currentUser?.uid;
-                if (!uid) return;
-
-                if(confirm(`Deseja remover "${texto}"?`)) {
+                if (confirm(`Deseja remover "${texto}"?`)) {
                     try {
                         const docRef = doc(db, "passageiros", uid);
                         const snap = await getDoc(docRef);
                         let prefs = snap.data().preferencias || [];
-
                         const novasPrefs = prefs.filter(p => p !== texto);
-                        
                         await updateDoc(docRef, { preferencias: novasPrefs });
-
                         li.remove();
-
-                        if(elListaPreferencias.children.length === 0) {
+                        if (elListaPreferencias.children.length === 0) {
                             elListaPreferencias.innerHTML = "<li style='opacity:0.7'>Nenhuma preferência.</li>";
                         }
-                    } catch (error) {
-                        console.error("Erro ao remover:", error);
-                        alert("Erro ao remover preferência.");
-                    }
+                    } catch (error) { console.error(error); }
                 }
             };
-
             li.appendChild(span);
             li.appendChild(iconRemove);
             elListaPreferencias.appendChild(li);
         }
 
+        // Toggle mostrar senha cartão
         if (btnToggleFinanceiro) {
             btnToggleFinanceiro.onclick = () => {
-
                 const type = elNumCartao.type === "password" ? "text" : "password";
-                
                 elNumCartao.type = type;
                 elValidade.type = type;
                 elCvv.type = type;
-
                 if (type === "text") {
-                    btnToggleFinanceiro.classList.remove("ri-eye-close-line");
-                    btnToggleFinanceiro.classList.add("ri-eye-line");
+                    btnToggleFinanceiro.classList.replace("ri-eye-close-line", "ri-eye-line");
                 } else {
-                    btnToggleFinanceiro.classList.remove("ri-eye-line");
-                    btnToggleFinanceiro.classList.add("ri-eye-close-line");
+                    btnToggleFinanceiro.classList.replace("ri-eye-line", "ri-eye-close-line");
                 }
             };
         }
 
+        // Abrir/Fechar Painel
         const panel = document.getElementById("perfilPanel");
         const overlay = document.getElementById("perfilOverlay");
-        
+
         document.getElementById("btnPerfilAbrir").onclick = () => {
             overlay.style.display = "block";
             panel.style.bottom = "0";
             document.body.classList.add("no-scroll");
-            carregarPerfil(); 
+            carregarPerfil();
         };
 
         function fecharPanel() {
             overlay.style.display = "none";
             panel.style.bottom = "-100%";
             document.body.classList.remove("no-scroll");
-
-            if (elNumCartao) {
-                elNumCartao.type = "password";
-                elValidade.type = "password";
-                elCvv.type = "password";
-                btnToggleFinanceiro.classList.remove("ri-eye-line");
-                btnToggleFinanceiro.classList.add("ri-eye-close-line");
-            }
         }
 
         document.getElementById("closePerfil").onclick = fecharPanel;
         overlay.onclick = fecharPanel;
 
+        // Adicionar Preferência
         const btnAddPreferencia = document.getElementById("btnAddPreferencia");
         const inputPreferencia = document.getElementById("inputPreferencia");
 
@@ -436,21 +583,17 @@
                 e.preventDefault();
                 const valor = inputPreferencia.value.trim();
                 if (!valor) return;
-
                 const uid = auth.currentUser?.uid;
                 try {
                     const docRef = doc(db, "passageiros", uid);
                     const snap = await getDoc(docRef);
                     let prefs = snap.data().preferencias || [];
-
-                    if(prefs.includes(valor)) {
+                    if (prefs.includes(valor)) {
                         alert("Essa preferência já existe.");
                         return;
                     }
-
                     prefs.push(valor);
                     await updateDoc(docRef, { preferencias: prefs });
-
                     if (elListaPreferencias.innerHTML.includes("Nenhuma")) elListaPreferencias.innerHTML = "";
                     criarElementoPreferencia(valor);
                     inputPreferencia.value = "";
@@ -458,6 +601,7 @@
             };
         }
 
+        // Salvar "Sobre Você" ao sair do campo
         if (elSobreVoce) {
             elSobreVoce.onblur = async () => {
                 const uid = auth.currentUser?.uid;
@@ -465,9 +609,10 @@
             };
         }
 
+        // Logout
         document.getElementById("btnLogout").onclick = async () => {
             await signOut(auth);
-            location.href = "telaLogin.html";
+            location.href = "index.html";
         };
 
     </script>

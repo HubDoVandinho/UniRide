@@ -1,0 +1,69 @@
+# ─── Maven ────────────────────────────────────────────────────
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ─── IntelliJ IDEA ───────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# ─── Eclipse ──────────────────────────────────────────────────
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# ─── VS Code ──────────────────────────────────────────────────
+.vscode/
+
+# ─── Spring Boot ──────────────────────────────────────────────
+spring-shell.log
+
+# ─── Banco de dados local (H2) ────────────────────────────────
+*.db
+*.mv.db
+*.trace.db
+
+# ─── Variáveis de ambiente e configurações sensíveis ─────────
+.env
+.env.*
+application-prod.properties
+application-prod.yml
+*-prod.properties
+*-prod.yml
+
+# ─── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+log/
+
+# ─── Sistema operacional ──────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ─── Node (caso use frontend React) ──────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.next/
+
+# ─── Uploads e arquivos gerados em runtime ───────────────────
+uploads/
+temp/
+tmp/

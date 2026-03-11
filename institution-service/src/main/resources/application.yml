@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: institution-service
+  profiles:
+    active: dev
+
+server:
+  port: 8082
+  servlet:
+    context-path: /
+
+jwt:
+  secret: ${JWT_SECRET:uniride-super-secret-key-2024-institution-service-jwt-token}
+  expiration-ms: 86400000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.uniride: DEBUG
+    org.hibernate.SQL: DEBUG

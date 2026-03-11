@@ -1,0 +1,396 @@
+### =============================================================
+###   UniRide — user-service | Endpoints de Teste
+###   Porta: 8081 | Perfil: dev (H2)
+###
+###   COMO USAR NO INTELLIJ:
+###   1. Abra este arquivo no IntelliJ
+###   2. Clique em ▶️ ao lado de cada requisição
+###   3. Após o login, copie o accessToken e cole em @token abaixo
+### =============================================================
+
+@baseUrl = http://localhost:8081/api/v1
+@token = COLE_O_ACCESS_TOKEN_AQUI_APOS_LOGIN
+@refreshToken = COLE_O_REFRESH_TOKEN_AQUI_APOS_LOGIN
+
+
+### =============================================================
+###  🏛️  INSTITUIÇÕES  (público)
+### =============================================================
+
+### [1] Listar todas as instituições
+GET {{baseUrl}}/instituicoes
+Accept: application/json
+
+###
+
+### [2] Buscar instituição por ID
+GET {{baseUrl}}/instituicoes/1
+Accept: application/json
+
+###
+
+### [3] Criar instituição (requer role ADMIN — pule por enquanto)
+# POST {{baseUrl}}/instituicoes
+# Authorization: Bearer {{token}}
+# Content-Type: application/json
+#
+# {
+#   "nome": "FATEC Sorocaba",
+#   "rua": "Av. Engenheiro Carlos Reinaldo Mendes",
+#   "numero": "2150",
+#   "bairro": "Alto da Boa Vista",
+#   "cep": "18013280",
+#   "estado": "SP"
+# }
+
+
+### =============================================================
+###  👤  CADASTRO  (público — sem token)
+### =============================================================
+
+### [4] Cadastrar PASSAGEIRO
+POST {{baseUrl}}/participantes/passageiros
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "email": "joao@fatec.edu.br",
+  "senha": "Senha@123",
+  "cpf": "123.456.789-00",
+  "miniBiografia": "Estudante de ADS na FATEC Sorocaba.",
+  "necessidadesEspeciais": null,
+  "instituicaoId": null
+}
+
+###
+
+### [5] Cadastrar MOTORISTA
+POST {{baseUrl}}/participantes/motoristas
+Content-Type: application/json
+
+{
+  "nome": "Carlos Motorista",
+  "email": "carlos@fatec.edu.br",
+  "senha": "Senha@123",
+  "cpf": "987.654.321-00",
+  "cnh": "12345678901",
+  "miniBiografia": "Motorista confiável da região.",
+  "instituicaoId": null
+}
+
+###
+
+### [6] Cadastrar passageiro com CPF duplicado (deve retornar 409)
+POST {{baseUrl}}/participantes/passageiros
+Content-Type: application/json
+
+{
+  "nome": "Outro João",
+  "email": "outro@fatec.edu.br",
+  "senha": "Senha@123",
+  "cpf": "123.456.789-00"
+}
+
+###
+
+### [7] Cadastrar com dados inválidos (deve retornar 400 com erros por campo)
+POST {{baseUrl}}/participantes/passageiros
+Content-Type: application/json
+
+{
+  "nome": "A",
+  "email": "email-invalido",
+  "senha": "fraca",
+  "cpf": "111"
+}
+
+
+### =============================================================
+###  🔐  AUTENTICAÇÃO
+### =============================================================
+
+### [8] Login — PASSAGEIRO
+### ⚠️  Após rodar, copie o "accessToken" e cole em @token acima
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@fatec.edu.br",
+  "senha": "Senha@123"
+}
+
+###
+
+### [9] Login — MOTORISTA
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "carlos@fatec.edu.br",
+  "senha": "Senha@123"
+}
+
+###
+
+### [10] Login com senha errada (deve retornar 401)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@fatec.edu.br",
+  "senha": "SenhaErrada"
+}
+
+###
+
+### [11] Testar rate limit — 5 tentativas seguidas disparam bloqueio
+### (rode este bloco 6 vezes — na 6ª deve retornar 429)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@fatec.edu.br",
+  "senha": "ErradoPropositalmente"
+}
+
+###
+
+### [12] Renovar token (Refresh Token Rotation)
+### Cole seu refreshToken em @refreshToken acima
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### [13] Logout — revoga todos os refresh tokens
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+###
+
+### [14] Usar token após logout (deve retornar 401)
+GET {{baseUrl}}/participantes/me
+Authorization: Bearer {{token}}
+
+
+### =============================================================
+###  🙋  PERFIL PRÓPRIO  (autenticado)
+### =============================================================
+
+### [15] Ver meu perfil
+GET {{baseUrl}}/participantes/me
+Authorization: Bearer {{token}}
+
+###
+
+### [16] Atualizar perfil
+PUT {{baseUrl}}/participantes/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "João Silva Atualizado",
+  "miniBiografia": "Bio atualizada via PUT.",
+  "instituicaoId": null
+}
+
+###
+
+### [17] Desativar minha conta (seta status=INATIVO)
+### ⚠️  Após rodar, não conseguirá mais logar com esse usuário
+# DELETE {{baseUrl}}/participantes/me
+# Authorization: Bearer {{token}}
+
+
+### =============================================================
+###  🚗  VEÍCULO  (somente MOTORISTA)
+### =============================================================
+
+### [18] Cadastrar veículo — CARRO
+### ⚠️  Faça login como MOTORISTA antes e atualize @token
+POST {{baseUrl}}/participantes/me/veiculo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "placa": "ABC1D23",
+  "tipo": "CARRO",
+  "modelo": "Onix",
+  "marca": "Chevrolet",
+  "ano": 2022,
+  "cor": "Prata",
+  "capacidade": 4,
+  "temSeguro": true,
+  "acessivel": false,
+  "tipoCombustivel": "FLEX",
+  "qtdPortas": 4
+}
+
+###
+
+### [19] Cadastrar veículo — MOTOCICLETA
+POST {{baseUrl}}/participantes/me/veiculo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "placa": "XYZ9876",
+  "tipo": "MOTOCICLETA",
+  "modelo": "CB 300R",
+  "marca": "Honda",
+  "ano": 2021,
+  "cor": "Preta",
+  "capacidade": 1,
+  "temSeguro": false,
+  "acessivel": false,
+  "tipoCombustivel": "GASOLINA",
+  "cilindrada": "300cc",
+  "temBauleto": true
+}
+
+###
+
+### [20] Ver meu veículo
+GET {{baseUrl}}/participantes/me/veiculo
+Authorization: Bearer {{token}}
+
+###
+
+### [21] Tentar cadastrar veículo como PASSAGEIRO (deve retornar 403)
+### (faça login como passageiro e use esse token)
+POST {{baseUrl}}/participantes/me/veiculo
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "placa": "DEF4567",
+  "tipo": "CARRO",
+  "modelo": "Gol",
+  "marca": "Volkswagen",
+  "ano": 2020,
+  "cor": "Branco",
+  "capacidade": 4,
+  "tipoCombustivel": "FLEX"
+}
+
+
+### =============================================================
+###  🏠  ENDEREÇOS  (autenticado)
+### =============================================================
+
+### [22] Adicionar endereço
+POST {{baseUrl}}/participantes/me/enderecos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rua": "Av. Engenheiro Carlos Reinaldo Mendes",
+  "numero": "2150",
+  "bairro": "Alto da Boa Vista",
+  "cep": "18013280",
+  "cidade": "Sorocaba",
+  "estado": "SP"
+}
+
+###
+
+### [23] Listar endereços
+GET {{baseUrl}}/participantes/me/enderecos
+Authorization: Bearer {{token}}
+
+###
+
+### [24] Remover endereço (substitua 1 pelo ID retornado no [22])
+DELETE {{baseUrl}}/participantes/me/enderecos/1
+Authorization: Bearer {{token}}
+
+###
+
+### [25] CEP com formato errado (deve retornar 400)
+POST {{baseUrl}}/participantes/me/enderecos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rua": "Rua Teste",
+  "numero": "10",
+  "bairro": "Centro",
+  "cep": "1234-567",
+  "cidade": "Sorocaba",
+  "estado": "SP"
+}
+
+
+### =============================================================
+###  📞  TELEFONES  (autenticado)
+### =============================================================
+
+### [26] Adicionar telefone celular (principal)
+POST {{baseUrl}}/participantes/me/telefones
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ddd": "15",
+  "numero": "991234567",
+  "tipo": "CELULAR",
+  "principal": true
+}
+
+###
+
+### [27] Adicionar telefone residencial
+POST {{baseUrl}}/participantes/me/telefones
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ddd": "15",
+  "numero": "32123456",
+  "tipo": "RESIDENCIAL",
+  "principal": false
+}
+
+###
+
+### [28] Listar telefones
+GET {{baseUrl}}/participantes/me/telefones
+Authorization: Bearer {{token}}
+
+###
+
+### [29] Remover telefone (substitua 1 pelo ID retornado no [26])
+DELETE {{baseUrl}}/participantes/me/telefones/1
+Authorization: Bearer {{token}}
+
+
+### =============================================================
+###  ⚙️  ADMIN  (requer role ADMIN — para testes futuros)
+### =============================================================
+
+### [30] Listar todos os participantes paginado
+### GET {{baseUrl}}/participantes?page=0&size=10&sort=criadoEm,desc
+### Authorization: Bearer {{token}}
+
+### [31] Buscar participante por ID
+### GET {{baseUrl}}/participantes/1
+### Authorization: Bearer {{token}}
+
+
+### =============================================================
+###  🏥  HEALTH CHECK
+### =============================================================
+
+### [32] Status da aplicação
+GET http://localhost:8081/actuator/health
+
+###
+
+### [33] H2 Console (abrir no browser)
+### http://localhost:8081/h2-console
+### JDBC URL: jdbc:h2:mem:uniride_users
+### User: sa  |  Password: (vazio)

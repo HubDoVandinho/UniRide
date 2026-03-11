@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: user-service
+
+  profiles:
+    active: dev
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8081
+  error:
+    include-message: never
+    include-stacktrace: never
+
+jwt:
+  secret: ${JWT_SECRET:uniride-dev-secret-key-must-be-at-least-256-bits-long-change-in-prod}
+  expiration-ms: 86400000
+  refresh-expiration-ms: 604800000
+
+rate-limit:
+  max-tentativas: 5
+  janela-minutos: 15
+
+institution-service:
+  url: ${INSTITUTION_SERVICE_URL:http://localhost:8082}
+
+logging:
+  level:
+    com.uniride: DEBUG
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized

@@ -1,11 +1,33 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, Component } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { OfflineBar } from '@/components/ui/OfflineBar';
 import { registerPushToken } from '@/services/push.service';
+
+// Mostra crash na tela em produção (remover após diagnóstico)
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      const err = this.state.error as Error;
+      return (
+        <View style={{ flex: 1, backgroundColor: '#1a1a2e', padding: 24, paddingTop: 60 }}>
+          <Text style={{ color: '#ff6b6b', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>CRASH DETECTADO</Text>
+          <ScrollView>
+            <Text style={{ color: '#fff', fontSize: 13, fontFamily: 'monospace' }}>{err.name}: {err.message}</Text>
+            <Text style={{ color: '#aaa', fontSize: 11, marginTop: 12 }}>{err.stack}</Text>
+          </ScrollView>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Configuração global: notificações aparecem mesmo com o app em foreground
 Notifications.setNotificationHandler({
@@ -100,15 +122,17 @@ export default function RootLayout() {
   const appKey = user?.id?.toString() ?? 'sem-usuario';
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <OfflineBar />
-      <Stack key={appKey} screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(app)" />
-        <Stack.Screen name="(admin)" />
-      </Stack>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <OfflineBar />
+        <Stack key={appKey} screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="(admin)" />
+        </Stack>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

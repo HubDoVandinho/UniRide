@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "UniRide",
+    "slug": "uniride",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "uniride",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.uniride.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSLocationWhenInUseUsageDescription": "O UniRide precisa da sua localização para encontrar caronas próximas.",
+        "NSLocationAlwaysUsageDescription": "O UniRide precisa da sua localização para encontrar caronas próximas.",
+        "NSUserNotificationsUsageDescription": "O UniRide envia notificações sobre suas caronas e solicitações."
+      }
+    },
+    "icon": "./assets/images/icon.png",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#7B2FBE"
+      },
+      "package": "com.uniride.app",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "O UniRide precisa da sua localização para encontrar caronas próximas."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#7B2FBE",
+          "sounds": []
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ],
+    "newArchEnabled": false,
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0ab7f9d0-d5e7-4a14-9e3d-967e4ade0f9f"
+      }
+    }
+  }
+}

@@ -91,13 +91,15 @@ function formatarSugestao(r: NominatimResult): string {
 async function geocodificarTexto(texto: string, contexto?: string): Promise<NominatimResult[]> {
   const query = contexto ? `${texto}, ${contexto}` : texto;
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&countrycodes=br`;
-  const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+  const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'UniRide/1.0 (uniride@contato.com)' } });
   if (!res.ok) return [];
   return res.json();
 }
 
 async function geocodificarNativo(texto: string): Promise<{ lat: number; lng: number } | null> {
   try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return null;
     const results = await Location.geocodeAsync(texto);
     if (results.length > 0) return { lat: results[0].latitude, lng: results[0].longitude };
   } catch {}
@@ -291,17 +293,13 @@ export default function SolicitarScreen() {
         setEnderecoLivreTexto('');
         buscarCaronas(lat, lng, direcaoBusca);
       } else {
-        // Sem coordenadas — busca todas as caronas sem filtro geográfico
-        setEnderecoLivreLat(null);
-        setEnderecoLivreLng(null);
-        setEnderecoLivreLabel(texto);
-        setEnderecoLivreTexto('');
-        buscarCaronas(undefined, undefined, direcaoBusca);
+        showAlert(
+          'Endereço não localizado',
+          'Não foi possível obter as coordenadas deste endereço. Selecione uma sugestão da lista ou tente um endereço mais completo (ex: Rua, número, cidade).',
+        );
       }
     } catch {
-      setEnderecoLivreLabel(texto);
-      setEnderecoLivreTexto('');
-      buscarCaronas(undefined, undefined, direcaoBusca);
+      showAlert('Erro', 'Não foi possível processar o endereço. Tente novamente.');
     } finally {
       setGeocodificandoSalvo(false);
     }

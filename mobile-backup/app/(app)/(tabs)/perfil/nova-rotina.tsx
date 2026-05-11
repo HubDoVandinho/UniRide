@@ -94,6 +94,8 @@ type EnderecoSelecionado = {
 // Apple Maps no iOS). Não depende de rate-limits externos.
 async function geocodificarNativo(texto: string): Promise<{ lat: number; lng: number } | null> {
   try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return null;
     const results = await Location.geocodeAsync(texto);
     if (results.length > 0) return { lat: results[0].latitude, lng: results[0].longitude };
   } catch {}
@@ -106,19 +108,23 @@ async function geocodificarNominatim(
 ): Promise<{ lat: number; lng: number } | null> {
   const street = [rua, numero].filter(Boolean).join(' ');
 
+  const NOMINATIM_HEADERS = { 'Accept-Language': 'pt-BR', 'User-Agent': 'UniRide/1.0 (uniride@contato.com)' };
+
   // 1ª: estruturada
-  try {
-    const p = new URLSearchParams({ format: 'json', street, city: cidade, state: estado, country: 'Brazil', countrycodes: 'br', limit: '1' });
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?${p}`, { headers: { 'Accept-Language': 'pt-BR' } });
-    const j = r.ok ? await r.json() : [];
-    if (j[0]) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
-  } catch {}
+  if (street || cidade) {
+    try {
+      const p = new URLSearchParams({ format: 'json', street, city: cidade, state: estado, country: 'Brazil', countrycodes: 'br', limit: '1' });
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?${p}`, { headers: NOMINATIM_HEADERS });
+      const j = r.ok ? await r.json() : [];
+      if (j[0]) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
+    } catch {}
+  }
 
   // 2ª: CEP
   if (cep) {
     try {
       const p = new URLSearchParams({ format: 'json', postalcode: cep.replace(/\D/g, ''), country: 'Brazil', countrycodes: 'br', limit: '1' });
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?${p}`, { headers: { 'Accept-Language': 'pt-BR' } });
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?${p}`, { headers: NOMINATIM_HEADERS });
       const j = r.ok ? await r.json() : [];
       if (j[0]) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
     } catch {}
@@ -127,12 +133,14 @@ async function geocodificarNominatim(
   // 3ª: free-form
   try {
     const q = [street, bairro, cidade, estado, 'Brasil'].filter(Boolean).join(', ');
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=br`,
-      { headers: { 'Accept-Language': 'pt-BR' } },
-    );
-    const j = r.ok ? await r.json() : [];
-    if (j[0]) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
+    if (q.replace(/,\s*/g, '').trim()) {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=br`,
+        { headers: NOMINATIM_HEADERS },
+      );
+      const j = r.ok ? await r.json() : [];
+      if (j[0]) return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
+    }
   } catch {}
 
   return null;
@@ -389,7 +397,6 @@ export default function NovaRotinaScreen() {
 
   const selecionarEndereco = async (end: EnderecoResponse) => {
     const label = [end.rua, end.numero].filter(Boolean).join(', ');
-    // Fecha o modal imediatamente para boa UX
     setInputEnderecoTexto('');
     setSugestoesEndereco([]);
     setErroEndereco(false);
@@ -398,7 +405,6 @@ export default function NovaRotinaScreen() {
     let lat = end.lat ?? null;
     let lng = end.lng ?? null;
 
-    // Se o DB não tem coordenadas, resolve agora (nativo → Nominatim)
     if (lat == null || lng == null) {
       setBuscandoGps(true);
       const coords = await geocodificarEnderecoSalvo(end);
@@ -407,11 +413,18 @@ export default function NovaRotinaScreen() {
       lng = coords?.lng ?? null;
     }
 
-    setEnderecoUsuario({ label, bairro: end.bairro, lat, lng, cep: end.cep, cidade: end.cidade, estado: end.estado });
-    if (lat != null && lng != null) {
-      setMarkerCoord({ latitude: lat, longitude: lng });
-      setMapKey((k) => k + 1);
+    if (lat == null || lng == null) {
+      setErroEndereco(true);
+      showAlert(
+        'Endereço não localizado',
+        'Não foi possível obter as coordenadas deste endereço salvo. Use o campo de busca acima para digitar o endereço e selecionar uma sugestão, ou use o GPS.',
+      );
+      return;
     }
+
+    setEnderecoUsuario({ label, bairro: end.bairro, lat, lng, cep: end.cep, cidade: end.cidade, estado: end.estado });
+    setMarkerCoord({ latitude: lat, longitude: lng });
+    setMapKey((k) => k + 1);
   };
 
   const toggleDia = (dia: DiaSemana) =>

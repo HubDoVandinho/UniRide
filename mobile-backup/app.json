@@ -24,13 +24,13 @@
         "backgroundColor": "#7B2FBE"
       },
       "package": "com.uniride.app",
-      "usesCleartextTraffic": true,
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "plugins": [
+      "./plugins/withAndroidCleartext",
       "expo-router",
       "expo-secure-store",
       [

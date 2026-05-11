@@ -357,17 +357,28 @@ export default function NovaRotinaScreen() {
   const usarGps = async () => {
     setBuscandoGps(true);
     try {
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        showAlert('GPS desativado', 'Ative o GPS do dispositivo nas configurações e tente novamente.');
+        return;
+      }
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         showAlert('Permissão negada', 'Permita o acesso à localização nas configurações do dispositivo.');
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const { latitude, longitude } = pos.coords;
-      // Reverse geocoding via Nominatim
+      // Tenta alta precisão; cai para balanceada se demorar mais de 10s
+      let pos = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+      ]);
+      if (!pos) {
+        pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      }
+      const { latitude, longitude } = (pos as Location.LocationObject).coords;
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-        { headers: { 'Accept-Language': 'pt-BR' } }
+        { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'UniRide/1.0 (uniride@contato.com)' } }
       );
       const json = await res.json();
       const a = json.address ?? {};
@@ -381,8 +392,9 @@ export default function NovaRotinaScreen() {
       setInputEnderecoTexto('');
       setSugestoesEndereco([]);
       setErroEndereco(false);
-    } catch {
-      showAlert('Erro', 'Não foi possível obter a localização. Tente novamente.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showAlert('Erro de localização', `Não foi possível obter a localização.\n\n${msg}`);
     } finally {
       setBuscandoGps(false);
     }

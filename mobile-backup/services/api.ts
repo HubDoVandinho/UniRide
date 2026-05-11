@@ -10,6 +10,7 @@ export const api = axios.create({
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
@@ -34,6 +35,7 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => Promise.reject(error)
@@ -141,7 +143,10 @@ api.interceptors.response.use(
     // Fallback para erros de rede sem resposta do servidor
     if (!error.response) {
       useNetworkStore.getState().setOffline(true);
-      return Promise.reject(new Error('Sem conexão com o servidor. Verifique sua internet.'));
+      const url = `${error.config?.baseURL ?? '?'}${error.config?.url ?? ''}`;
+      return Promise.reject(
+        new Error(`Sem conexão [${error.code ?? 'ERR'}] ${error.message} → ${url}`)
+      );
     }
 
     return Promise.reject(error);

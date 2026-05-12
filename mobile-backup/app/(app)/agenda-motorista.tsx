@@ -78,8 +78,9 @@ export default function AgendaMotoristaScreen() {
       }
 
       setMarkedDates(marked);
-    } catch {
-      showAlert('Erro', 'Não foi possível carregar a agenda deste motorista.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Não foi possível carregar a agenda deste motorista.';
+      showAlert('Sem acesso', msg);
     } finally {
       setLoading(false);
     }

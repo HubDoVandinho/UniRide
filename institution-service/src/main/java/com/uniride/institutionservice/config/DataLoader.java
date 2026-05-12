@@ -24,10 +24,25 @@ public class DataLoader implements CommandLineRunner {
         if (repository.count() > 0) return;
 
         List<Instituicao> instituicoes = List.of(
+                // ID 1 — instituição usada pelos usuários de teste (dev)
+                Instituicao.builder()
+                        .nome("Faculdade Teste UniRide")
+                        .sigla("FACULDADE-TESTE")
+                        .dominioEmail("faculdade.edu.br")
+                        .tipo("Faculdade")
+                        .rua("Rua dos Testes")
+                        .numero("1")
+                        .bairro("Centro")
+                        .cidade("São Paulo")
+                        .estado("SP")
+                        .cep("01000000")
+                        .lat(-23.5505).lng(-46.6333)
+                        .status(StatusInstituicao.ATIVA)
+                        .build(),
                 Instituicao.builder()
                         .nome("Faculdade de Tecnologia de Sorocaba")
                         .sigla("FATEC Sorocaba")
-                        .dominioEmail("fatec.edu.br")
+                        .dominioEmail("aluno.cps.sp.gov.br")
                         .tipo("Faculdade")
                         .rua("Av. Engenheiro Carlos Reinaldo Mendes")
                         .numero("2015")
@@ -35,6 +50,7 @@ public class DataLoader implements CommandLineRunner {
                         .cidade("Sorocaba")
                         .estado("SP")
                         .cep("18013280")
+                        .lat(-23.4867).lng(-47.4458)
                         .status(StatusInstituicao.ATIVA)
                         .build(),
                 Instituicao.builder()
@@ -48,6 +64,7 @@ public class DataLoader implements CommandLineRunner {
                         .cidade("Campinas")
                         .estado("SP")
                         .cep("13083859")
+                        .lat(-22.8173).lng(-47.0665)
                         .status(StatusInstituicao.ATIVA)
                         .build(),
                 Instituicao.builder()
@@ -61,6 +78,7 @@ public class DataLoader implements CommandLineRunner {
                         .cidade("Campinas")
                         .estado("SP")
                         .cep("13086900")
+                        .lat(-22.8501).lng(-47.0584)
                         .status(StatusInstituicao.ATIVA)
                         .build(),
                 Instituicao.builder()
@@ -74,6 +92,7 @@ public class DataLoader implements CommandLineRunner {
                         .cidade("Itatiba")
                         .estado("SP")
                         .cep("13251900")
+                        .lat(-23.0063).lng(-46.8385)
                         .status(StatusInstituicao.ATIVA)
                         .build(),
                 Instituicao.builder()
@@ -87,6 +106,7 @@ public class DataLoader implements CommandLineRunner {
                         .cidade("São Paulo")
                         .estado("SP")
                         .cep("05508220")
+                        .lat(-23.5623).lng(-46.7255)
                         .status(StatusInstituicao.ATIVA)
                         .build()
         );

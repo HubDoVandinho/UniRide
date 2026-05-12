@@ -2,10 +2,14 @@ package com.uniride.institutionservice.controller;
 
 import com.uniride.institutionservice.dto.request.AtualizarInstituicaoRequest;
 import com.uniride.institutionservice.dto.request.CriarInstituicaoRequest;
+import com.uniride.institutionservice.dto.request.ImportarEmecRequest;
 import com.uniride.institutionservice.dto.response.ApiResponse;
+import com.uniride.institutionservice.dto.response.EmecIesResponse;
 import com.uniride.institutionservice.dto.response.InstituicaoResponse;
 import com.uniride.institutionservice.dto.response.ValidacaoDominioResponse;
 import com.uniride.institutionservice.service.InstituicaoService;
+
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -99,5 +103,33 @@ public class InstituicaoController {
     public ResponseEntity<ApiResponse<Void>> desativar(@PathVariable Long id) {
         service.desativar(id);
         return ResponseEntity.ok(ApiResponse.ok("Instituição desativada."));
+    }
+
+    // ─── Integração e-MEC ─────────────────────────────────────────────────────
+
+    /**
+     * Busca IES na API pública do e-MEC pelo nome.
+     * Retorna a lista para o admin escolher qual importar.
+     */
+    @GetMapping("/admin/emec/buscar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<EmecIesResponse>>> buscarNoEmec(
+            @RequestParam String nome) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "Resultado da busca no e-MEC.", service.buscarNoEmec(nome)));
+    }
+
+    /**
+     * Importa uma IES do e-MEC pelo código.
+     * Salva: nome, cidade, estado, tipo, código e-MEC e status.
+     * O admin deve complementar com dominioEmail via PUT /{id}.
+     */
+    @PostMapping("/admin/emec/importar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<InstituicaoResponse>> importarDoEmec(
+            @Valid @RequestBody ImportarEmecRequest request) {
+        InstituicaoResponse response = service.importarDoEmec(request.getCodigoEmec());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("IES importada do e-MEC com sucesso. Complete o dominioEmail via PUT /" + response.getId(), response));
     }
 }

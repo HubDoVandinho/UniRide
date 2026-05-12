@@ -6,6 +6,8 @@ import lombok.Data;
 @Data
 public class EnderecoRequest {
 
+    @Size(max = 60) private String nome;
+
     @NotBlank @Size(max = 200) private String rua;
     @Size(max = 20) private String numero;
     @NotBlank @Size(max = 100) private String bairro;
@@ -18,4 +20,8 @@ public class EnderecoRequest {
 
     @NotBlank @Size(min = 2, max = 2, message = "Estado deve ser a UF com 2 letras")
     private String estado;
+
+    // Opcional — geocodificado pelo frontend antes de enviar
+    private Double lat;
+    private Double lng;
 }

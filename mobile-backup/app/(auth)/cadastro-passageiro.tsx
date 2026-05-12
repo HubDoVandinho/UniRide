@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -56,7 +58,6 @@ const schema1 = z.object({
   senha:              z.string().regex(senhaRegex, 'Senha deve conter maiúscula, minúscula, número e especial (@$!%*?&_-)'),
   confirmarSenha:     z.string().min(1, 'Confirme a senha'),
   instituicaoId:      z.number({ required_error: 'Selecione uma instituição' }).positive('Selecione uma instituição'),
-  miniBiografia:      z.string().min(10, 'Bio deve ter ao menos 10 caracteres').max(300),
 }).refine((d) => d.senha === d.confirmarSenha, { message: 'As senhas não conferem', path: ['confirmarSenha'] });
 
 const schema2 = z.object({
@@ -242,7 +243,7 @@ export default function CadastroPassageiroScreen() {
 
   const form1 = useForm<Form1>({
     resolver: zodResolver(schema1),
-    defaultValues: { nome: '', emailPessoal: '', emailInstitucional: '', cpf: '', senha: '', confirmarSenha: '', miniBiografia: '' },
+    defaultValues: { nome: '', emailPessoal: '', emailInstitucional: '', cpf: '', senha: '', confirmarSenha: '' },
   });
 
   const verificarUsername = useCallback((valor: string) => {
@@ -318,7 +319,7 @@ export default function CadastroPassageiroScreen() {
         nome: s1.nome, username: s1.username || undefined,
         emailPessoal: s1.emailPessoal, emailInstitucional: s1.emailInstitucional,
         cpf: s1.cpf, senha: s1.senha,
-        instituicaoId: s1.instituicaoId, miniBiografia: s1.miniBiografia,
+        instituicaoId: s1.instituicaoId,
         endereco: {
           nome: s2.nome || undefined,
           cep: s2.cep, rua: s2.rua, numero: s2.numero || undefined,
@@ -424,6 +425,10 @@ export default function CadastroPassageiroScreen() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -503,13 +508,6 @@ export default function CadastroPassageiroScreen() {
             <Text style={styles.senhaHint}>
               A senha deve ter ao menos 8 caracteres, incluindo maiúscula, minúscula, número e um caractere especial (@$!%*?&_-).
             </Text>
-
-            <Controller control={form1.control} name="miniBiografia" render={({ field: { value, onChange } }) => (
-              <Input label="Mini biografia" value={value} onChangeText={onChange}
-                placeholder="Conte um pouco sobre você (ao menos 10 caracteres)"
-                autoCapitalize="sentences" multiline numberOfLines={3}
-                error={form1.formState.errors.miniBiografia?.message} />
-            )} />
 
             {/* Seletor de instituição */}
             <View style={styles.fieldGroup}>
@@ -765,6 +763,7 @@ export default function CadastroPassageiroScreen() {
       />
       {alertModal}
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -808,9 +807,9 @@ const styles = StyleSheet.create({
   errorText:      { color: '#FF4444', fontSize: 12, marginTop: 4 },
 
   usernameGroup:    { marginBottom: 0 },
-  usernameChecking: { fontSize: 12, color: Colors.TextMuted, marginTop: 4 },
-  usernameAvailable:{ fontSize: 12, color: Colors.Success, marginTop: 4, fontWeight: '600' },
-  usernameTaken:    { fontSize: 12, color: Colors.Error, marginTop: 4, fontWeight: '600' },
+  usernameChecking: { fontSize: 12, color: Colors.TextMuted, marginTop: 4, marginBottom: 8 },
+  usernameAvailable:{ fontSize: 12, color: Colors.Success, marginTop: 4, fontWeight: '600', marginBottom: 8 },
+  usernameTaken:    { fontSize: 12, color: Colors.Error, marginTop: 4, fontWeight: '600', marginBottom: 8 },
   usernameHint:     { fontSize: 12, color: Colors.TextMuted, marginTop: -12, marginBottom: 16, lineHeight: 18 },
   senhaHint:        { fontSize: 12, color: Colors.TextMuted, marginTop: -12, marginBottom: 16, lineHeight: 18 },
 

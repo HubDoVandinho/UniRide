@@ -99,9 +99,9 @@ type FormData = z.infer<typeof schema>;
 
 // ── Tipos locais ──────────────────────────────────────────────────────────────
 
-const TIPOS_VEICULO: { value: TipoVeiculo; label: string; icon: string }[] = [
-  { value: 'CARRO',       label: 'Carro', icon: '🚗' },
-  { value: 'MOTOCICLETA', label: 'Moto',  icon: '🏍️' },
+const TIPOS_VEICULO: { value: TipoVeiculo; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { value: 'CARRO',       label: 'Carro', icon: 'car-outline' },
+  { value: 'MOTOCICLETA', label: 'Moto',  icon: 'bicycle-outline' },
 ];
 
 // ── Componente picker reutilizado internamente ─────────────────────────────────
@@ -364,7 +364,7 @@ export default function PromoverMotoristaScreen() {
       await refreshSession();
 
       showAlert(
-        'Parabéns! 🎉',
+        'Parabéns!',
         'Seu perfil de motorista foi ativado. Agora você pode criar rotinas e oferecer caronas.',
         [{ text: 'Continuar', onPress: () => router.replace('/perfil') }]
       );
@@ -383,13 +383,24 @@ export default function PromoverMotoristaScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.title}>Virar Motorista</Text>
-        <Text style={styles.subtitle}>
-          Preencha seus dados de motorista para começar a oferecer caronas.
-        </Text>
+        <Text style={styles.subtitle}>Cadastre sua CNH e veículo para começar a oferecer caronas.</Text>
+
+        {/* Hero intro card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroIconWrap}>
+            <Ionicons name="car-sport-outline" size={32} color="#fff" />
+          </View>
+          <Text style={styles.heroTitulo}>Torne-se um motorista UniRide</Text>
+          <Text style={styles.heroDesc}>
+            Após a aprovação do seu cadastro pela equipe UniRide, você poderá criar rotinas e oferecer caronas para seus colegas de faculdade.
+          </Text>
+        </View>
 
         {/* CNH */}
         <View style={styles.section}>
@@ -426,7 +437,7 @@ export default function PromoverMotoristaScreen() {
                 ]}
                 onPress={() => setTipoVeiculo(t.value)}
               >
-                <Text style={styles.tipoBtnIcon}>{t.icon}</Text>
+                <Ionicons name={t.icon} size={24} color={tipoVeiculo === t.value ? Colors.Primary : Colors.TextMuted} style={{ marginBottom: 4 }} />
                 <Text
                   style={[
                     styles.tipoBtnLabel,
@@ -546,21 +557,22 @@ export default function PromoverMotoristaScreen() {
               />
             </View>
           </View>
-        </View>
 
-        <View style={styles.avisoCard}>
-          <Text style={styles.avisoText}>
-            ⚠️ Após confirmar, seu token de acesso será renovado automaticamente para refletir o perfil de motorista.
-          </Text>
-        </View>
+          <View style={[styles.avisoCard, { marginTop: 8 }]}>
+            <Ionicons name="information-circle-outline" size={18} color="#795548" style={{ marginTop: 1 }} />
+            <Text style={styles.avisoText}>
+              Após confirmar, sua sessão será atualizada automaticamente com o perfil de motorista.
+            </Text>
+          </View>
 
-        <Button
-          title="Confirmar e virar motorista"
-          onPress={handleSubmit(onSubmit)}
-          variant="primary"
-          loading={loading}
-          style={styles.submitBtn}
-        />
+          <Button
+            title="Confirmar e virar motorista"
+            onPress={handleSubmit(onSubmit)}
+            variant="primary"
+            loading={loading}
+            style={{ marginTop: 12 }}
+          />
+        </View>
       </ScrollView>
 
       {/* Picker de marcas */}
@@ -590,18 +602,32 @@ export default function PromoverMotoristaScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.SurfaceLight },
-  scroll: { padding: 20, paddingBottom: 40 },
+  safe: { flex: 1, backgroundColor: Colors.Background },
+  scroll: { padding: 20, paddingBottom: 40, gap: 16 },
 
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   backBtn: { padding: 4 },
-  title: { fontSize: 26, fontWeight: '800', color: Colors.Primary, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: Colors.TextMuted, marginBottom: 24, lineHeight: 20 },
+  title: { fontSize: 26, fontWeight: '800', color: Colors.TextLight, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 20 },
+
+  heroCard: {
+    backgroundColor: Colors.Surface, borderRadius: 20, padding: 20,
+    alignItems: 'center', gap: 10,
+    borderWidth: 1.5, borderColor: Colors.Primary + '25',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07, shadowRadius: 6, elevation: 3,
+  },
+  heroIconWrap: {
+    width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.Primary,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  },
+  heroTitulo: { fontSize: 16, fontWeight: '800', color: Colors.Primary, textAlign: 'center' },
+  heroDesc: { fontSize: 13, color: Colors.TextMuted, textAlign: 'center', lineHeight: 19 },
 
   section: {
     backgroundColor: Colors.Surface,
     borderRadius: 20,
     padding: 20,
-    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
@@ -632,7 +658,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.Primary,
     backgroundColor: Colors.Primary + '12',
   },
-  tipoBtnIcon: { fontSize: 22, marginBottom: 4 },
+  tipoBtnIcon: { marginBottom: 4 },
   tipoBtnLabel: { fontSize: 12, color: Colors.TextMuted, fontWeight: '600' },
   tipoBtnLabelActive: { color: Colors.Primary },
 
@@ -642,14 +668,10 @@ const styles = StyleSheet.create({
   rowSmall: { flex: 1 },
 
   avisoCard: {
-    backgroundColor: '#FFF8E1',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#FFD54F',
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    backgroundColor: '#FFF8E1', borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: '#FFD54F',
   },
-  avisoText: { fontSize: 13, color: '#795548', lineHeight: 18 },
+  avisoText: { flex: 1, fontSize: 13, color: '#795548', lineHeight: 18 },
 
-  submitBtn: { minHeight: 52 },
 });

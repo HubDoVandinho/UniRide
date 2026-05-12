@@ -13,6 +13,7 @@ public class InstituicaoResponse {
     private String nome;
     private String sigla;
     private String dominioEmail;
+    private String codigoEmec;
     private String tipo;
     private String rua;
     private String numero;
@@ -20,6 +21,8 @@ public class InstituicaoResponse {
     private String cidade;
     private String estado;
     private String cep;
+    private Double lat;
+    private Double lng;
     private StatusInstituicao status;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;

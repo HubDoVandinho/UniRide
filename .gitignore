@@ -39,6 +39,8 @@ application-prod.properties
 application-prod.yml
 *-prod.properties
 *-prod.yml
+application-dev.yml
+*-dev.yml
 
 # ─── Logs ─────────────────────────────────────────────────────
 *.log
@@ -67,3 +69,10 @@ build/
 uploads/
 temp/
 tmp/
+
+# ─── APKs gerados localmente ─────────────────────────────────
+*.apk
+*.aab
+
+# ─── Claude Code (configurações locais do agente) ────────────
+.claude/

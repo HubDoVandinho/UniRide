@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -189,14 +189,9 @@ const sfStyles = StyleSheet.create({
 
 interface VeiculoFormProps {
   onSalvo: (perfil: import('@/types/api.types').ParticipanteResponse) => void;
-  onLoadingChange?: (loading: boolean) => void;
 }
 
-interface VeiculoFormHandle {
-  submit: () => void;
-}
-
-const VeiculoForm = forwardRef<VeiculoFormHandle, VeiculoFormProps>(function VeiculoForm({ onSalvo, onLoadingChange }, ref) {
+function VeiculoForm({ onSalvo }: VeiculoFormProps) {
   const { setUser } = useAuthStore();
   const { showAlert, alertModal } = useAppAlert();
   const [tipoVeiculo, setTipoVeiculo] = useState<TipoVeiculo>('CARRO');
@@ -215,10 +210,6 @@ const VeiculoForm = forwardRef<VeiculoFormHandle, VeiculoFormProps>(function Vei
     resolver: zodResolver(schema),
     defaultValues: { marca: '', modelo: '', ano: '', cor: '', placa: '' },
   });
-
-  useImperativeHandle(ref, () => ({
-    submit: () => handleSubmit(onSubmit)(),
-  }));
 
   useEffect(() => {
     setLoadingMarcas(true);
@@ -262,7 +253,6 @@ const VeiculoForm = forwardRef<VeiculoFormHandle, VeiculoFormProps>(function Vei
     if (!pendingData) return;
     setConfirmVisible(false);
     setSalvando(true);
-    onLoadingChange?.(true);
     try {
       const payload = {
         placa:      pendingData.placa.toUpperCase(),
@@ -281,7 +271,6 @@ const VeiculoForm = forwardRef<VeiculoFormHandle, VeiculoFormProps>(function Vei
       showAlert('Erro', e instanceof Error ? e.message : 'Não foi possível salvar o veículo.');
     } finally {
       setSalvando(false);
-      onLoadingChange?.(false);
       setPendingData(null);
     }
   };
@@ -383,6 +372,14 @@ const VeiculoForm = forwardRef<VeiculoFormHandle, VeiculoFormProps>(function Vei
             <Text style={styles.capacidadeVal}>{CAPACIDADE_POR_TIPO[tipoVeiculo]} passageiro(s)</Text>
           </View>
         </View>
+
+        <View style={styles.formDivider} />
+        <Button
+          title="Cadastrar veículo"
+          onPress={handleSubmit(onSubmit)}
+          variant="primary"
+          loading={salvando}
+        />
       </View>
 
       <PickerModal
@@ -433,7 +430,7 @@ const VeiculoForm = forwardRef<VeiculoFormHandle, VeiculoFormProps>(function Vei
       {alertModal}
     </>
   );
-});
+}
 
 const cfStyles = StyleSheet.create({
   overlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', padding: 24 },
@@ -504,8 +501,6 @@ export default function VeiculoScreen() {
   const [carregando, setCarregando]   = useState(true);
   const [removendo, setRemovendo]     = useState<number | null>(null);
   const [formVisivel, setFormVisivel] = useState(false);
-  const [salvandoForm, setSalvandoForm] = useState(false);
-  const formRef = useRef<VeiculoFormHandle>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -625,25 +620,16 @@ export default function VeiculoScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Novo Veículo</Text>
-              <TouchableOpacity onPress={() => setFormVisivel(false)}>
-                <Text style={styles.modalClose}>✕</Text>
+              <TouchableOpacity onPress={() => setFormVisivel(false)} style={styles.modalBackBtn}>
+                <Ionicons name="arrow-back" size={22} color="#fff" />
               </TouchableOpacity>
+              <Text style={styles.modalTitle}>Novo Veículo</Text>
+              <Text style={styles.modalSubtitle}>Informe os dados do seu veículo</Text>
             </View>
             <VeiculoForm
-              ref={formRef}
               onSalvo={handleSalvo}
-              onLoadingChange={setSalvandoForm}
             />
           </ScrollView>
-          <View style={styles.floatBar}>
-            <Button
-              title="Cadastrar veículo"
-              onPress={() => formRef.current?.submit()}
-              variant="primary"
-              loading={salvandoForm}
-            />
-          </View>
         </SafeAreaView>
       </Modal>
 
@@ -707,20 +693,12 @@ const styles = StyleSheet.create({
   veiculoBadgeText: { fontSize: 13, fontWeight: '700', color: Colors.Primary },
 
   // Modal
-  modalSafeArea: { flex: 1, backgroundColor: Colors.SurfaceLight },
-  modalScroll:   { padding: 20, paddingBottom: 8, flexGrow: 1 },
-  modalHeader: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 20,
-  },
-  modalTitle: { fontSize: 22, fontWeight: '800', color: Colors.Primary },
-  modalClose: { fontSize: 20, color: Colors.TextMuted, padding: 4 },
-  floatBar: {
-    padding: 20, paddingTop: 12,
-    backgroundColor: Colors.SurfaceLight,
-    borderTopWidth: 1, borderTopColor: Colors.Primary + '15',
-  },
-
+  modalSafeArea: { flex: 1, backgroundColor: Colors.Background },
+  modalScroll:   { padding: 20, flexGrow: 1 },
+  modalHeader:   { paddingBottom: 20 },
+  modalBackBtn:  { padding: 4, marginBottom: 8, alignSelf: 'flex-start' },
+  modalTitle:    { fontSize: 22, fontWeight: '800', color: Colors.TextLight },
+  modalSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   // Formulário
   formCard: {
     backgroundColor: Colors.Surface, borderRadius: 20, padding: 20, marginBottom: 16,

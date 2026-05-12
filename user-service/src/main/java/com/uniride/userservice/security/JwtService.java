@@ -28,10 +28,11 @@ public class JwtService {
     public String gerarToken(Participante participante) {
         String tipo = participante.getClass().getSimpleName().toUpperCase();
         return Jwts.builder()
-                .subject(participante.getEmail())
-                .claim("userId", participante.getId())
-                .claim("tipo", tipo)
-                .claim("role", "ROLE_" + tipo)
+                .subject(participante.getEmailPessoal())
+                .claim("userId",       participante.getId())
+                .claim("tipo",         tipo)
+                .claim("role",         "ROLE_" + tipo)
+                .claim("instituicaoId", participante.getInstituicaoId()) // ← adicionado
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(secretKey)
@@ -44,6 +45,10 @@ public class JwtService {
 
     public Long extrairUserId(String token) {
         return parsearClaims(token).get("userId", Long.class);
+    }
+
+    public Long extrairInstituicaoId(String token) {
+        return parsearClaims(token).get("instituicaoId", Long.class);
     }
 
     public String extrairRole(String token) {
@@ -62,7 +67,7 @@ public class JwtService {
         return false;
     }
 
-    private Claims parsearClaims(String token) {
+    public Claims parsearClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()

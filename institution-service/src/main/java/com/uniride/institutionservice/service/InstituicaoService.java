@@ -2,10 +2,13 @@ package com.uniride.institutionservice.service;
 
 import com.uniride.institutionservice.dto.request.AtualizarInstituicaoRequest;
 import com.uniride.institutionservice.dto.request.CriarInstituicaoRequest;
+import com.uniride.institutionservice.dto.response.EmecIesResponse;
 import com.uniride.institutionservice.dto.response.InstituicaoResponse;
 import com.uniride.institutionservice.dto.response.ValidacaoDominioResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface InstituicaoService {
 
@@ -28,4 +31,8 @@ public interface InstituicaoService {
     void desativar(Long id);
 
     ValidacaoDominioResponse validarDominio(String dominio);
+
+    // e-MEC
+    List<EmecIesResponse> buscarNoEmec(String nome);
+    InstituicaoResponse importarDoEmec(String codigoEmec);
 }

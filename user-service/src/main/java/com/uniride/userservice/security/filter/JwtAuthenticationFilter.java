@@ -31,17 +31,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extrairToken(request);
+        log.debug("[JWT] path={} token={}", request.getRequestURI(), token == null ? "AUSENTE" : "PRESENTE");
 
         if (StringUtils.hasText(token) && jwtService.validarToken(token)) {
             String email = jwtService.extrairEmail(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            if (userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
+            log.debug("[JWT] email={} enabled={} nonLocked={} authorities={}",
+                    email, userDetails.isEnabled(), userDetails.isAccountNonLocked(), userDetails.getAuthorities());
+
+            if (!userDetails.isAccountNonLocked()) {
+                log.warn("[JWT] Conta suspensa: {}", email);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"codigo\":\"CONTA_SUSPENSA\",\"mensagem\":\"Sua conta foi suspensa. Entre em contato: suporte@uniride.com\"}");
+                return;
+            } else if (userDetails.isEnabled()) {
                 var auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                log.debug("[JWT] Autenticacao definida para: {}", email);
+            } else {
+                log.warn("[JWT] Autenticacao NEGADA para: {} (enabled={}, nonLocked={})",
+                        email, userDetails.isEnabled(), userDetails.isAccountNonLocked());
             }
+        } else if (StringUtils.hasText(token)) {
+            log.warn("[JWT] Token invalido/expirado para path={}", request.getRequestURI());
         }
         filterChain.doFilter(request, response);
     }

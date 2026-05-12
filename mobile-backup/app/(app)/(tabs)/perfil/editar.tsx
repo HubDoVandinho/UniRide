@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Colors } from '@/constants/colors';
@@ -42,8 +42,6 @@ type EditarFormData = z.infer<typeof editarSchema>;
 export default function EditarPerfilScreen() {
   const router = useRouter();
   const { user, setUser, logout } = useAuthStore();
-  const { bottom: bottomInset } = useSafeAreaInsets();
-  const floatBarHeight = 50 + 12 + Math.max(bottomInset, 16) + 12;
   const [loading, setLoading] = useState(false);
   const { showAlert, alertModal } = useAppAlert();
 
@@ -136,14 +134,14 @@ export default function EditarPerfilScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: floatBarHeight + 16 }]}
+        contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
+              <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
           <Text style={styles.title}>Editar Perfil</Text>
@@ -246,6 +244,14 @@ export default function EditarPerfilScreen() {
             </View>
             </>
           )}
+
+          <View style={styles.cardDivider} />
+          <Button
+            title="Salvar perfil"
+            onPress={handleSubmit(onSubmit)}
+            variant="primary"
+            loading={loading}
+          />
         </View>
 
         {/* ── Preferências e Endereços ──────────────────────── */}
@@ -270,6 +276,24 @@ export default function EditarPerfilScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* ── Virar motorista (só passageiros) ─────────────── */}
+        {user?.tipo === 'PASSAGEIRO' && (
+          <TouchableOpacity
+            style={styles.virarMotoristaCard}
+            onPress={() => router.push('/perfil/promover-motorista')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.virarMotoristaIconWrap}>
+              <Ionicons name="car-sport-outline" size={26} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.virarMotoristaTitulo}>Virar motorista</Text>
+              <Text style={styles.virarMotoristaDesc}>Cadastre sua CNH e veículo para oferecer caronas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+          </TouchableOpacity>
+        )}
+
         {/* ── Apagar conta ─────────────────────────────────── */}
         <View style={styles.deleteZoneCard}>
           <View style={styles.deleteZoneHeader}>
@@ -290,17 +314,6 @@ export default function EditarPerfilScreen() {
         </View>
 
       </ScrollView>
-
-      {/* ── Botão fixo no rodapé ──────────────────────────── */}
-      <View style={[styles.floatSaveBar, { paddingBottom: Math.max(bottomInset, 16) }]}>
-        <Button
-          title="Salvar perfil"
-          onPress={handleSubmit(onSubmit)}
-          variant="primary"
-          loading={loading}
-          style={styles.floatSaveBtn}
-        />
-      </View>
 
       {alertModal}
 
@@ -367,7 +380,7 @@ export default function EditarPerfilScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.SurfaceLight },
+  safeArea: { flex: 1, backgroundColor: Colors.Background },
   scroll:   { flexGrow: 1, padding: 20, gap: 12 },
   header:   { marginBottom: 8 },
   headerRow: {
@@ -375,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', marginBottom: 6,
   },
   backBtn: { padding: 4 },
-  title:   { fontSize: 26, fontWeight: '800', color: Colors.Primary },
+  title:   { fontSize: 26, fontWeight: '800', color: Colors.TextLight },
 
   card: {
     backgroundColor: Colors.Surface, borderRadius: 20, padding: 20,
@@ -411,12 +424,6 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: 11, color: Colors.TextMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
   infoValue: { fontSize: 14, color: Colors.Text, fontWeight: '600', marginTop: 1 },
   infoSep: { height: 1, backgroundColor: Colors.Primary + '15', marginBottom: 12 },
-  floatSaveBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 20, paddingTop: 12,
-    backgroundColor: 'rgba(245,245,250,0.92)',
-  },
-  floatSaveBtn: { minHeight: 50 },
   deleteZoneCard: {
     backgroundColor: Colors.Surface, borderRadius: 20, padding: 20,
     borderWidth: 1.5, borderColor: Colors.Error + '33',
@@ -438,6 +445,19 @@ const styles = StyleSheet.create({
   },
   deleteZoneBtnText: { fontSize: 14, fontWeight: '700', color: Colors.Error },
 
+  virarMotoristaCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: 18,
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  virarMotoristaIconWrap: {
+    width: 52, height: 52, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  virarMotoristaTitulo: { fontSize: 15, fontWeight: '800', color: '#fff', marginBottom: 3 },
+  virarMotoristaDesc:   { fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 16 },
+
   section: {
     backgroundColor: Colors.Surface, borderRadius: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
@@ -451,9 +471,9 @@ const styles = StyleSheet.create({
   actionIcon:     { marginRight: 12, width: 28, textAlign: 'center' },
   actionText:     { flex: 1, fontSize: 15, color: Colors.Text, fontWeight: '500' },
 
-  usernameAvailable: { fontSize: 12, color: Colors.Success, marginTop: 2, marginLeft: 4 },
-  usernameTaken:     { fontSize: 12, color: Colors.Error, marginTop: 2, marginLeft: 4 },
-  usernameChecking:  { fontSize: 12, color: Colors.TextMuted, marginTop: 2, marginLeft: 4 },
+  usernameAvailable: { fontSize: 12, color: Colors.Success, marginTop: 2, marginLeft: 4, marginBottom: 8 },
+  usernameTaken:     { fontSize: 12, color: Colors.Error, marginTop: 2, marginLeft: 4, marginBottom: 8 },
+  usernameChecking:  { fontSize: 12, color: Colors.TextMuted, marginTop: 2, marginLeft: 4, marginBottom: 8 },
 
   // Modal apagar
   modalOverlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 32 },

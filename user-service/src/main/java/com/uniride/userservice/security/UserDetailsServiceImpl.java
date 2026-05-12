@@ -17,7 +17,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Participante participante = participanteRepository.findByEmail(email)
+        Participante participante = participanteRepository.findByEmailPessoal(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
 
         String role = "ROLE_" + participante.getClass().getSimpleName().toUpperCase();
@@ -25,7 +25,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         boolean desativado = participante.getStatus().name().equals("INATIVO");
 
         return User.builder()
-                .username(participante.getEmail())
+                .username(participante.getEmailPessoal())
                 .password(participante.getSenhaHash())
                 .authorities(List.of(new SimpleGrantedAuthority(role)))
                 .accountLocked(bloqueado)

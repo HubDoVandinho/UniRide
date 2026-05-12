@@ -7,26 +7,32 @@ import com.uniride.userservice.dto.response.SaoAmigosResponse;
 import com.uniride.userservice.entity.Amizade;
 import com.uniride.userservice.entity.Participante;
 import com.uniride.userservice.enums.StatusAmizade;
+import com.uniride.userservice.exception.AcessoNegadoException;
 import com.uniride.userservice.exception.BusinessException;
 import com.uniride.userservice.exception.RecursoNaoEncontradoException;
 import com.uniride.userservice.repository.AmizadeRepository;
+import com.uniride.userservice.repository.ParticipantePreferenciaRepository;
 import com.uniride.userservice.repository.ParticipanteRepository;
 import com.uniride.userservice.service.AmizadeService;
+import com.uniride.userservice.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AmizadeServiceImpl implements AmizadeService {
 
-    private final AmizadeRepository     amizadeRepository;
-    private final ParticipanteRepository participanteRepository;
-    private final InstitutionClient     institutionClient;
+    private final AmizadeRepository                  amizadeRepository;
+    private final ParticipanteRepository             participanteRepository;
+    private final ParticipantePreferenciaRepository  participantePreferenciaRepository;
+    private final InstitutionClient                  institutionClient;
+    private final NotificationService                notificationService;
 
     // ── Enviar solicitação ────────────────────────────────────────────────────
 
@@ -60,7 +66,19 @@ public class AmizadeServiceImpl implements AmizadeService {
         amizade.setDestinatario(destinatario);
         amizade.setStatus(StatusAmizade.PENDENTE);
 
-        return toResponse(amizadeRepository.save(amizade));
+        AmizadeResponse response = toResponse(amizadeRepository.save(amizade));
+
+        // Notifica o destinatário
+        String nomeExibicao = solicitante.getNomeSocial() != null && !solicitante.getNomeSocial().isBlank()
+                ? solicitante.getNomeSocial() : solicitante.getNome();
+        notificationService.enviar(
+                destinatario.getPushToken(),
+                "Nova solicitação de amizade",
+                nomeExibicao + " quer ser seu amigo!",
+                Map.of("tipo", "AMIZADE_PENDENTE", "amizadeId", response.getId())
+        );
+
+        return response;
     }
 
     // ── Aceitar ───────────────────────────────────────────────────────────────
@@ -71,7 +89,21 @@ public class AmizadeServiceImpl implements AmizadeService {
         Amizade amizade = buscarAmizadeComoDestinatario(amizadeId, destinatarioId);
         validarPendente(amizade);
         amizade.setStatus(StatusAmizade.ACEITA);
-        return toResponse(amizadeRepository.save(amizade));
+        AmizadeResponse response = toResponse(amizadeRepository.save(amizade));
+
+        // Notifica o solicitante
+        Participante solicitante = amizade.getSolicitante();
+        Participante destinatario = amizade.getDestinatario();
+        String nomeDestinatario = destinatario.getNomeSocial() != null && !destinatario.getNomeSocial().isBlank()
+                ? destinatario.getNomeSocial() : destinatario.getNome();
+        notificationService.enviar(
+                solicitante.getPushToken(),
+                "Solicitação aceita!",
+                nomeDestinatario + " aceitou seu pedido de amizade.",
+                Map.of("tipo", "AMIZADE_ACEITA", "amizadeId", amizadeId)
+        );
+
+        return response;
     }
 
     // ── Recusar ───────────────────────────────────────────────────────────────
@@ -110,7 +142,11 @@ public class AmizadeServiceImpl implements AmizadeService {
             throw new BusinessException("Você não faz parte desta amizade.");
         }
 
-        if (amizade.getStatus() != StatusAmizade.ACEITA) {
+        boolean podeRemover = amizade.getStatus() == StatusAmizade.ACEITA
+                || (amizade.getStatus() == StatusAmizade.PENDENTE
+                    && amizade.getSolicitante().getId().equals(participanteId));
+
+        if (!podeRemover) {
             throw new BusinessException("Só é possível remover amizades aceitas. Use recusar ou bloquear.");
         }
 
@@ -118,15 +154,37 @@ public class AmizadeServiceImpl implements AmizadeService {
         log.info("Amizade id={} removida pelo participante id={}", amizadeId, participanteId);
     }
 
+    // ── Cancelar solicitação enviada ──────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public void cancelarSolicitacao(Long amizadeId, Long solicitanteId) {
+        Amizade amizade = amizadeRepository.findById(amizadeId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Amizade"));
+
+        if (!amizade.getSolicitante().getId().equals(solicitanteId)) {
+            throw new BusinessException("Você não é o solicitante desta amizade.");
+        }
+
+        if (amizade.getStatus() != StatusAmizade.PENDENTE) {
+            throw new BusinessException("Só é possível cancelar solicitações pendentes.");
+        }
+
+        amizadeRepository.delete(amizade);
+        log.info("Solicitação id={} cancelada pelo solicitante id={}", amizadeId, solicitanteId);
+    }
+
     // ── Listagens ─────────────────────────────────────────────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public List<AmizadeResponse> listarAmigos(Long participanteId) {
         return amizadeRepository.findAmigosAceitos(participanteId)
                 .stream().map(this::toResponse).toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AmizadeResponse> listarPendentesRecebidas(Long participanteId) {
         return amizadeRepository
                 .findByDestinatarioIdAndStatus(participanteId, StatusAmizade.PENDENTE)
@@ -134,15 +192,46 @@ public class AmizadeServiceImpl implements AmizadeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AmizadeResponse> listarPendentesEnviadas(Long participanteId) {
         return amizadeRepository
                 .findBySolicitanteIdAndStatus(participanteId, StatusAmizade.PENDENTE)
                 .stream().map(this::toResponse).toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AmizadeResponse> listarTodasEnviadas(Long participanteId) {
+        return amizadeRepository
+                .findEnviadasNaoAceitas(participanteId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    // ── Busca por nome dentro da instituição ─────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PerfilPublicoResponse> buscarNaInstituicao(Long meuId, String termo) {
+        Participante eu = buscarParticipante(meuId);
+        Long instituicaoId = eu.getInstituicaoId();
+
+        if (instituicaoId == null || termo == null || termo.isBlank()) return List.of();
+
+        String termoNormalizado = termo.trim().startsWith("@")
+                ? termo.trim().substring(1)
+                : termo.trim();
+
+        return participanteRepository
+                .buscarPorNomeNaInstituicao(meuId, instituicaoId, termoNormalizado)
+                .stream()
+                .map(p -> toPerfilPublicoComStatus(p, meuId, instituicaoId))
+                .toList();
+    }
+
     // ── Sugestões da instituição ──────────────────────────────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public List<PerfilPublicoResponse> sugestoesDaInstituicao(Long participanteId) {
         Participante participante = buscarParticipante(participanteId);
         Long instituicaoId = participante.getInstituicaoId();
@@ -161,14 +250,51 @@ public class AmizadeServiceImpl implements AmizadeService {
     // ── Perfil público ────────────────────────────────────────────────────────
 
     @Override
-    public PerfilPublicoResponse buscarPerfilPublico(Long participanteId) {
+    @Transactional(readOnly = true)
+    public PerfilPublicoResponse buscarPerfilPublico(Long participanteId, Long meuId) {
         Participante participante = buscarParticipante(participanteId);
-        return toPerfilPublico(participante, participante.getInstituicaoId());
+        PerfilPublicoResponse resp = meuId == null
+                ? toPerfilPublico(participante, participante.getInstituicaoId())
+                : toPerfilPublicoComStatus(participante, meuId, participante.getInstituicaoId());
+        resp.setTotalAmigos((int) amizadeRepository.countAmigosAceitos(participanteId));
+        return resp;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PerfilPublicoResponse buscarPerfilPublicoPorUsername(String username, Long meuId) {
+        Participante participante = participanteRepository.findByUsername(username.toLowerCase().trim())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Participante"));
+        PerfilPublicoResponse resp = meuId == null
+                ? toPerfilPublico(participante, participante.getInstituicaoId())
+                : toPerfilPublicoComStatus(participante, meuId, participante.getInstituicaoId());
+        resp.setTotalAmigos((int) amizadeRepository.countAmigosAceitos(participante.getId()));
+        return resp;
+    }
+
+    // ── Listar amigos de outro usuário (privado) ──────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PerfilPublicoResponse> listarAmigosDeOutroUsuario(Long targetId, Long meuId) {
+        if (!amizadeRepository.saoAmigos(meuId, targetId)) {
+            throw new AcessoNegadoException();
+        }
+        return amizadeRepository.findAmigosAceitos(targetId)
+                .stream()
+                .map(a -> {
+                    Participante outro = a.getSolicitante().getId().equals(targetId)
+                            ? a.getDestinatario()
+                            : a.getSolicitante();
+                    return toPerfilPublicoComStatus(outro, meuId, outro.getInstituicaoId());
+                })
+                .toList();
     }
 
     // ── Verificar amizade (Feign Client do ride-service) ──────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public SaoAmigosResponse verificarAmizade(Long idA, Long idB) {
         return SaoAmigosResponse.builder()
                 .idA(idA)
@@ -216,15 +342,46 @@ public class AmizadeServiceImpl implements AmizadeService {
             }
         }
 
+        List<String> preferencias = participantePreferenciaRepository
+                .findAllByParticipanteId(p.getId())
+                .stream()
+                .map(pp -> pp.getTipoPreferencia().getNome())
+                .toList();
+
         return PerfilPublicoResponse.builder()
                 .id(p.getId())
                 .nome(nomeExibicao)
-                .fotoPerfil(null) // implementar upload futuramente
+                .username(p.getUsername())
+                .fotoPerfil(p.getFotoPerfilUrl())
                 .instituicao(nomeInstituicao)
                 .tipo(p.getClass().getSimpleName().toUpperCase())
-                .avaliacaoMedia(null) // virá do ride-service futuramente
+                .avaliacaoMedia(p.getMediaAvaliacoes())
                 .verificado(p.getVerificado())
+                .miniBiografia(p.getMiniBiografia())
+                .preferencias(preferencias.isEmpty() ? null : preferencias)
                 .build();
+    }
+
+    private PerfilPublicoResponse toPerfilPublicoComStatus(Participante p, Long meuId, Long instituicaoId) {
+        PerfilPublicoResponse base = toPerfilPublico(p, instituicaoId);
+
+        amizadeRepository.findEntre(meuId, p.getId()).ifPresentOrElse(
+            amizade -> {
+                String status = switch (amizade.getStatus()) {
+                    case ACEITA    -> "ACEITA";
+                    case BLOQUEADA -> "BLOQUEADA";
+                    case RECUSADA  -> "NENHUMA"; // permite reenviar
+                    case PENDENTE  -> amizade.getSolicitante().getId().equals(meuId)
+                                        ? "PENDENTE_ENVIADA"
+                                        : "PENDENTE_RECEBIDA";
+                };
+                base.setStatusAmizade(status);
+                base.setAmizadeId(amizade.getId());
+            },
+            () -> base.setStatusAmizade("NENHUMA")
+        );
+
+        return base;
     }
 
     private AmizadeResponse toResponse(Amizade a) {

@@ -10,7 +10,7 @@ server:
     context-path: /
 
 jwt:
-  secret: ${JWT_SECRET:uniride-super-secret-key-2024-institution-service-jwt-token}
+  secret: ${JWT_SECRET:uniride-dev-secret-key-must-be-at-least-256-bits-long-change-in-prod}
   expiration-ms: 86400000
 
 management:
@@ -21,6 +21,10 @@ management:
   endpoint:
     health:
       show-details: never
+
+emec:
+  api:
+    url: ${EMEC_API_URL:https://emec.mec.gov.br/emec/consulta/getIes}
 
 logging:
   level:

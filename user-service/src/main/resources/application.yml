@@ -1,4 +1,4 @@
-spring:
+﻿spring:
   application:
     name: user-service
 
@@ -10,6 +10,18 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: 8081
@@ -29,10 +41,13 @@ rate-limit:
 institution-service:
   url: ${INSTITUTION_SERVICE_URL:http://localhost:8082}
 
+app:
+  url: ${APP_URL:http://192.168.0.42:8080}
+
 logging:
   level:
     com.uniride: DEBUG
-    org.springframework.security: WARN
+    org.springframework.security: DEBUG
     org.hibernate.SQL: WARN
 
 management:

@@ -15,5 +15,7 @@ public class InstituicaoClientResponse {
     private String rua;
     private String numero;
     private String bairro;
+    private Double lat;
+    private Double lng;
     private String status;
 }

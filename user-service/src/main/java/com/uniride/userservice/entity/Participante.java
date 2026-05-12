@@ -24,8 +24,35 @@ public abstract class Participante {
     @Column(nullable = false, length = 120)
     private String nome;
 
-    @Column(nullable = false, unique = true, length = 180)
-    private String email;
+    // Nome social — exibido no lugar do nome quando preenchido
+    @Column(name = "nome_social", length = 120)
+    private String nomeSocial;
+
+    // Identificador público único — exibido como @username
+    @Column(nullable = false, unique = true, length = 30)
+    private String username;
+
+    // Credencial permanente de login — nunca expira, independe da instituição
+    @Column(name = "email_pessoal", nullable = false, unique = true, length = 180)
+    private String emailPessoal;
+
+    // Usado uma vez no cadastro para provar vínculo universitário
+    @Column(name = "email_institucional", nullable = false, unique = true, length = 180)
+    private String emailInstitucional;
+
+    // Token de ativação enviado para o emailInstitucional
+    @Column(name = "token_confirmacao", length = 64)
+    private String tokenConfirmacao;
+
+    @Column(name = "token_confirmacao_expira_em")
+    private LocalDateTime tokenConfirmacaoExpiraEm;
+
+    // OTP de redefinição de senha (6 dígitos, expira em 15 min)
+    @Column(name = "token_reset_senha", length = 6)
+    private String tokenResetSenha;
+
+    @Column(name = "token_reset_senha_expira_em")
+    private LocalDateTime tokenResetSenhaExpiraEm;
 
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
@@ -35,6 +62,9 @@ public abstract class Participante {
 
     @Column(name = "mini_biografia", length = 500)
     private String miniBiografia;
+
+    @Column(name = "foto_perfil_url", columnDefinition = "TEXT")
+    private String fotoPerfilUrl;
 
     @Column(nullable = false)
     private Boolean verificado = false;
@@ -60,6 +90,13 @@ public abstract class Participante {
     // Apenas o ID — detalhes buscados via institution-service
     @Column(name = "instituicao_id")
     private Long instituicaoId;
+
+    @Column(name = "media_avaliacoes")
+    private Double mediaAvaliacoes;
+
+    // Token do dispositivo para notificações push (Expo Push Token)
+    @Column(name = "push_token", length = 200)
+    private String pushToken;
 
     @PrePersist
     protected void prePersist() {

@@ -236,9 +236,19 @@ function PassageiroCorridasScreen() {
     } finally { setEnviandoAv(false); }
   };
 
+  const temDot = ({ sol, carona }: SolicitacaoComCarona) =>
+    (carona?.status === 'EM_ANDAMENTO' && (sol.status === 'APROVADA' || sol.status === 'EMBARCADO') && !caronasIniciadasVistas.includes(sol.caronaId))
+    || caronasComMensagemNova.includes(sol.caronaId)
+    || (sol.status === 'APROVADA' && !aprovacoesVistas.includes(sol.id));
+
   const ativas = itens
     .filter((i) => ['PENDENTE', 'APROVADA', 'EMBARCADO'].includes(i.sol.status))
-    .sort((a, b) => (a.carona?.status === 'EM_ANDAMENTO' ? 0 : 1) - (b.carona?.status === 'EM_ANDAMENTO' ? 0 : 1));
+    .sort((a, b) => {
+      const dotA = temDot(a) ? 0 : 1;
+      const dotB = temDot(b) ? 0 : 1;
+      if (dotA !== dotB) return dotA - dotB;
+      return (a.carona?.status === 'EM_ANDAMENTO' ? 0 : 1) - (b.carona?.status === 'EM_ANDAMENTO' ? 0 : 1);
+    });
   const historico = itens
     .filter((i) => ['CONCLUIDA', 'CANCELADA', 'RECUSADA'].includes(i.sol.status))
     .sort((a, b) => ((b.carona?.data as string) ?? '').localeCompare((a.carona?.data as string) ?? ''));
@@ -349,7 +359,7 @@ function PassageiroCorridasScreen() {
       <View style={{ flex: 1, padding: 20 }}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(app)/(tabs)/perfil')} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
             </TouchableOpacity>
           </View>
@@ -710,7 +720,7 @@ export default function MinhasRotinasScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(app)/(tabs)/perfil')} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
             </TouchableOpacity>
           </View>

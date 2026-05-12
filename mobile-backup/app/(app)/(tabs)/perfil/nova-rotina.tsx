@@ -220,7 +220,6 @@ export default function NovaRotinaScreen() {
   const [sugestoesEndereco, setSugestoesEndereco]         = useState<NominatimResult[]>([]);
   const [buscandoSugestoes, setBuscandoSugestoes]         = useState(false);
   const [semResultado, setSemResultado]                   = useState(false);
-  const [buscandoGps, setBuscandoGps]                     = useState(false);
   const [erroEndereco, setErroEndereco]                   = useState(false);
   const [inputFocado, setInputFocado]                     = useState(false);
   const [markerCoord, setMarkerCoord] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -246,10 +245,10 @@ export default function NovaRotinaScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 20, paddingBottom: 0 }}>
-          <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
+          <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={styles.bloqueioContainer}>
-          <Ionicons name="time-outline" size={48} color={Colors.Primary} />
+          <Ionicons name="time-outline" size={48} color="#fff" />
           <Text style={styles.bloqueioTitulo}>CNH em análise</Text>
           <Text style={styles.bloqueioTexto}>
             Sua CNH está sendo verificada pela equipe UniRide. Você poderá criar rotinas assim que a aprovação for concluída.
@@ -354,51 +353,6 @@ export default function NovaRotinaScreen() {
     setErroEndereco(false);
   };
 
-  const usarGps = async () => {
-    setBuscandoGps(true);
-    try {
-      const servicesEnabled = await Location.hasServicesEnabledAsync();
-      if (!servicesEnabled) {
-        showAlert('GPS desativado', 'Ative o GPS do dispositivo nas configurações e tente novamente.');
-        return;
-      }
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        showAlert('Permissão negada', 'Permita o acesso à localização nas configurações do dispositivo.');
-        return;
-      }
-      // Tenta alta precisão; cai para balanceada se demorar mais de 10s
-      let pos = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
-      ]);
-      if (!pos) {
-        pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      }
-      const { latitude, longitude } = (pos as Location.LocationObject).coords;
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-        { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'UniRide/1.0 (uniride@contato.com)' } }
-      );
-      const json = await res.json();
-      const a = json.address ?? {};
-      const rua    = a.road ?? '';
-      const numero = a.house_number ?? '';
-      const bairro = a.suburb || a.neighbourhood || a.quarter || a.city || '';
-      const label  = [rua, numero].filter(Boolean).join(', ') || json.display_name;
-      setEnderecoUsuario({ label, bairro, lat: latitude, lng: longitude });
-      setMarkerCoord({ latitude, longitude });
-      setMapKey((k) => k + 1);
-      setInputEnderecoTexto('');
-      setSugestoesEndereco([]);
-      setErroEndereco(false);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      showAlert('Erro de localização', `Não foi possível obter a localização.\n\n${msg}`);
-    } finally {
-      setBuscandoGps(false);
-    }
-  };
 
   const limparEndereco = () => {
     setEnderecoUsuario(null);
@@ -418,9 +372,7 @@ export default function NovaRotinaScreen() {
     let lng = end.lng ?? null;
 
     if (lat == null || lng == null) {
-      setBuscandoGps(true);
       const coords = await geocodificarEnderecoSalvo(end);
-      setBuscandoGps(false);
       lat = coords?.lat ?? null;
       lng = coords?.lng ?? null;
     }
@@ -468,6 +420,17 @@ export default function NovaRotinaScreen() {
       showAlert('Atenção', 'Selecione ao menos um dia da semana.');
       return;
     }
+
+    // RN13 — nome único por motorista
+    try {
+      const existentes = await rotinaService.listar();
+      const nomeNovo = data.nome.trim().toLowerCase();
+      const duplicado = existentes.some(r => (r.nome ?? '').toLowerCase() === nomeNovo);
+      if (duplicado) {
+        showAlert('Nome já em uso', `Você já tem uma rotina chamada "${data.nome.trim()}". Escolha um nome diferente.`);
+        return;
+      }
+    } catch { /* ignora falha na verificação; backend também valida */ }
 
     if (!enderecoUsuario) {
       setErroEndereco(true);
@@ -577,15 +540,16 @@ export default function NovaRotinaScreen() {
           onPress={() => step === 1 ? router.back() : setStep((s) => (s - 1) as 1 | 2 | 3)}
           style={styles.backBtn}
         >
-          <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
+          <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.title}>Nova Rotina</Text>
         <View style={styles.stepIndicatorRow}>
-          <View style={[styles.stepDot, step >= 1 && styles.stepDotAtivo]} />
-          <View style={styles.stepLine} />
-          <View style={[styles.stepDot, step >= 2 && styles.stepDotAtivo]} />
-          <View style={styles.stepLine} />
-          <View style={[styles.stepDot, step >= 3 && styles.stepDotAtivo]} />
+          {[1, 2, 3].map((i) => (
+            <View
+              key={i}
+              style={[styles.stepSegment, step >= i && styles.stepSegmentAtivo, i > 1 && { marginLeft: 6 }]}
+            />
+          ))}
         </View>
         <Text style={styles.subtitle}>
           {step === 1 ? 'Passo 1 de 3 — Veículo' : step === 2 ? 'Passo 2 de 3 — Rota' : 'Passo 3 de 3 — Detalhes'}
@@ -599,60 +563,79 @@ export default function NovaRotinaScreen() {
       >
 
         {/* ══ PASSO 1 — Veículo ════════════════════════════════════════════════ */}
-        {step === 1 && <>
+        {step === 1 && (
+          <View style={styles.veiculoWrapCard}>
 
-        {veiculos.length === 0 ? (
-          <View style={styles.semVeiculoBox}>
-            <Ionicons name="car-outline" size={22} color={Colors.Error} />
-            <Text style={styles.semVeiculoText}>
-              Nenhum veículo cadastrado. Acesse Perfil → Meu veículo para adicionar.
-            </Text>
+            {veiculos.length === 0 ? (
+              <View style={styles.semVeiculoBox}>
+                <View style={styles.semVeiculoIconWrap}>
+                  <Ionicons name="car-outline" size={36} color={Colors.TextMuted} />
+                </View>
+                <Text style={styles.semVeiculoTitulo}>Nenhum veículo cadastrado</Text>
+                <Text style={styles.semVeiculoText}>
+                  Acesse Perfil → Meus Veículos para adicionar.
+                </Text>
+                <TouchableOpacity
+                  style={styles.semVeiculoBtn}
+                  onPress={() => router.push('/perfil/veiculo' as any)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.semVeiculoBtnText}>Cadastrar veículo</Text>
+                </TouchableOpacity>
+              </View>
+            ) : !veiculoSelecionado ? (
+              <TouchableOpacity
+                style={styles.veiculoSelectorBtn}
+                onPress={() => setVeiculoSheetVisible(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.veiculoSelectorIconWrap}>
+                  <Ionicons name="car-sport-outline" size={40} color={Colors.Primary} />
+                </View>
+                <Text style={styles.veiculoSelectorTitle}>Selecionar veículo</Text>
+                <Text style={styles.veiculoSelectorSub}>Toque para escolher</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.veiculoCard}
+                onPress={() => setVeiculoSheetVisible(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.veiculoCardHeader}>
+                  <View style={styles.veiculoIconWrap}>
+                    <Ionicons name="car-sport-outline" size={30} color={Colors.Primary} />
+                  </View>
+                  <Ionicons name="chevron-down" size={20} color={Colors.Primary} />
+                </View>
+                <Text style={styles.veiculoNome} numberOfLines={1}>
+                  {veiculoSelecionado.modelo} {veiculoSelecionado.marca}
+                </Text>
+                <Text style={styles.veiculoCor}>
+                  {veiculoSelecionado.cor} · {veiculoSelecionado.ano}
+                </Text>
+                <View style={styles.veiculoDivider} />
+                <View style={styles.veiculoBadgesRow}>
+                  <View style={styles.veiculoBadge}>
+                    <Ionicons name="card-outline" size={14} color={Colors.Primary} />
+                    <Text style={styles.veiculoBadgeText}>{veiculoSelecionado.placa}</Text>
+                  </View>
+                  <View style={styles.veiculoBadge}>
+                    <Ionicons name="people-outline" size={14} color={Colors.Primary} />
+                    <Text style={styles.veiculoBadgeText}>{capacidade} vagas</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {veiculos.length > 0 && (
+              <>
+                <View style={styles.veiculoWrapDivider} />
+                <Button title="Próximo" onPress={handleProximo} variant="primary" />
+              </>
+            )}
+
           </View>
-        ) : !veiculoSelecionado ? (
-          <TouchableOpacity
-            style={styles.veiculoSelectorBtn}
-            onPress={() => setVeiculoSheetVisible(true)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.veiculoSelectorIconWrap}>
-              <Ionicons name="car-sport-outline" size={40} color={Colors.Primary} />
-            </View>
-            <Text style={styles.veiculoSelectorTitle}>Selecionar veículo</Text>
-            <Text style={styles.veiculoSelectorSub}>Toque para escolher</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.veiculoCard}
-            onPress={() => setVeiculoSheetVisible(true)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.veiculoCardHeader}>
-              <View style={styles.veiculoIconWrap}>
-                <Ionicons name="car-sport-outline" size={30} color={Colors.Primary} />
-              </View>
-              <Ionicons name="chevron-down" size={20} color={Colors.Primary} />
-            </View>
-            <Text style={styles.veiculoNome} numberOfLines={1}>
-              {veiculoSelecionado.modelo} {veiculoSelecionado.marca}
-            </Text>
-            <Text style={styles.veiculoCor}>
-              {veiculoSelecionado.cor} · {veiculoSelecionado.ano}
-            </Text>
-            <View style={styles.veiculoDivider} />
-            <View style={styles.veiculoBadgesRow}>
-              <View style={styles.veiculoBadge}>
-                <Ionicons name="card-outline" size={14} color={Colors.Primary} />
-                <Text style={styles.veiculoBadgeText}>{veiculoSelecionado.placa}</Text>
-              </View>
-              <View style={styles.veiculoBadge}>
-                <Ionicons name="people-outline" size={14} color={Colors.Primary} />
-                <Text style={styles.veiculoBadgeText}>{capacidade} vagas</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
         )}
-
-        </>}
 
         {/* ══ PASSO 2 — Rota ═══════════════════════════════════════════════════ */}
         {step === 2 && <>
@@ -666,16 +649,16 @@ export default function NovaRotinaScreen() {
               style={[styles.direcaoBtn, direcao === 'IDA' && styles.direcaoBtnAtivo]}
               onPress={() => setDirecao('IDA')}
             >
-              <Ionicons name="arrow-forward-circle-outline" size={20} color={direcao === 'IDA' ? '#fff' : Colors.Primary} />
+              <Ionicons name="arrow-forward-circle-outline" size={32} color={direcao === 'IDA' ? '#fff' : Colors.Primary} />
               <Text style={[styles.direcaoBtnText, direcao === 'IDA' && styles.direcaoBtnTextAtivo]}>
-                Ir para faculdade
+                Ir para a faculdade
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.direcaoBtn, direcao === 'VOLTA' && styles.direcaoBtnAtivo]}
               onPress={() => setDirecao('VOLTA')}
             >
-              <Ionicons name="arrow-back-circle-outline" size={20} color={direcao === 'VOLTA' ? '#fff' : Colors.Primary} />
+              <Ionicons name="arrow-back-circle-outline" size={32} color={direcao === 'VOLTA' ? '#fff' : Colors.Primary} />
               <Text style={[styles.direcaoBtnText, direcao === 'VOLTA' && styles.direcaoBtnTextAtivo]}>
                 Sair da faculdade
               </Text>
@@ -741,11 +724,6 @@ export default function NovaRotinaScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            <TouchableOpacity style={styles.gpsBtn} onPress={usarGps} disabled={buscandoGps}>
-              {buscandoGps
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Ionicons name="locate" size={20} color="#fff" />}
-            </TouchableOpacity>
           </View>
 
           {enderecoUsuario && (
@@ -840,6 +818,9 @@ export default function NovaRotinaScreen() {
           <Text style={styles.raioHint}>
             Máximo que você aceita se desviar do trajeto para buscar passageiros.
           </Text>
+
+          <View style={styles.rotaDivider} />
+          <Button title="Próximo" onPress={handleProximo} variant="primary" />
 
         </View>
 
@@ -948,19 +929,13 @@ export default function NovaRotinaScreen() {
             />
           )} />
 
+          <View style={styles.rotaDivider} />
+          <Button title="Criar rotina" onPress={handleSubmit(onSubmit)} variant="primary" loading={loading} />
+
         </View>
 
         </>}
       </ScrollView>
-
-      {/* Botão fixo na base */}
-      <View style={styles.floatBar}>
-        {step < 3 ? (
-          <Button title="Próximo" onPress={handleProximo} variant="primary" style={styles.floatBtn} />
-        ) : (
-          <Button title="Criar rotina" onPress={handleSubmit(onSubmit)} variant="primary" loading={loading} style={styles.floatBtn} />
-        )}
-      </View>
 
       {/* Modal: endereços salvos */}
       <Modal visible={enderecoPickerVisible} transparent animationType="fade">
@@ -1039,26 +1014,18 @@ export default function NovaRotinaScreen() {
 // ── Estilos ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.SurfaceLight },
+  safeArea: { flex: 1, backgroundColor: Colors.Background },
 
-  scrollCentered: { flexGrow: 1, padding: 20, paddingBottom: 8, justifyContent: 'center' },
-  scrollNormal:   { padding: 20, paddingBottom: 8 },
-
-  floatBar: {
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
-    backgroundColor: 'rgba(245,245,250,0.95)',
-    borderTopWidth: 1, borderTopColor: '#EBEBEB',
-  },
-  floatBtn: { minHeight: 50 },
+  scrollCentered: { flexGrow: 1, padding: 20, paddingBottom: 24, justifyContent: 'center' },
+  scrollNormal:   { padding: 20, paddingBottom: 24 },
 
   header:  { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
   backBtn: { padding: 4, marginBottom: 6 },
-  stepIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 8 },
-  stepDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.Primary + '40' },
-  stepDotAtivo: { backgroundColor: Colors.Primary },
-  stepLine: { flex: 1, height: 2, backgroundColor: Colors.Primary + '30', maxWidth: 40 },
-  title:    { fontSize: 26, fontWeight: '800', color: Colors.Primary, marginBottom: 4 },
-  subtitle: { fontSize: 13, color: Colors.TextMuted },
+  stepIndicatorRow:  { flexDirection: 'row', marginVertical: 8 },
+  stepSegment:       { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' },
+  stepSegmentAtivo:  { backgroundColor: Colors.TextLight },
+  title:    { fontSize: 26, fontWeight: '800', color: Colors.TextLight, marginBottom: 4 },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)' },
 
   // Seções
   secaoCard: {
@@ -1078,20 +1045,35 @@ const styles = StyleSheet.create({
     marginBottom: 10, marginTop: 4,
   },
 
-  // Veículo vazio
-  semVeiculoBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.Error + '10', borderRadius: 16,
-    padding: 20, borderWidth: 1, borderColor: Colors.Error + '30',
+  // Card wrapper do step 1
+  veiculoWrapCard: {
+    backgroundColor: Colors.Surface, borderRadius: 20, padding: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12, shadowRadius: 10, elevation: 5,
   },
-  semVeiculoText: { flex: 1, fontSize: 13, color: Colors.Error, lineHeight: 18 },
+  veiculoWrapDivider: { height: 1, backgroundColor: Colors.Primary + '20', marginVertical: 16 },
+
+  // Veículo vazio
+  semVeiculoBox: { alignItems: 'center', gap: 10, paddingVertical: 12 },
+  semVeiculoIconWrap: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: Colors.SurfaceLight,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  },
+  semVeiculoTitulo: { fontSize: 16, fontWeight: '800', color: Colors.Text, textAlign: 'center' },
+  semVeiculoText:   { fontSize: 13, color: Colors.TextMuted, textAlign: 'center', lineHeight: 19 },
+  semVeiculoBtn: {
+    marginTop: 8, backgroundColor: Colors.Primary, borderRadius: 14,
+    paddingHorizontal: 24, paddingVertical: 12,
+  },
+  semVeiculoBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
   // Botão selector (nenhum selecionado)
   veiculoSelectorBtn: {
-    borderWidth: 1.5, borderColor: Colors.Primary, borderRadius: 20,
-    borderStyle: 'dashed', padding: 40,
+    borderWidth: 1.5, borderColor: Colors.Primary, borderStyle: 'dashed',
+    borderRadius: 16, padding: 32,
     alignItems: 'center', gap: 14,
-    backgroundColor: Colors.Primary + '05',
+    backgroundColor: Colors.SurfaceLight,
   },
   veiculoSelectorIconWrap: {
     width: 80, height: 80, borderRadius: 40,
@@ -1103,8 +1085,8 @@ const styles = StyleSheet.create({
 
   // Card de veículo selecionado
   veiculoCard: {
-    borderWidth: 1.5, borderColor: Colors.Primary, borderRadius: 20,
-    padding: 24, backgroundColor: Colors.Primary + '08', gap: 6,
+    borderWidth: 1.5, borderColor: Colors.Primary, borderRadius: 16,
+    padding: 20, backgroundColor: Colors.Primary + '0C', gap: 6,
   },
   veiculoCardHeader: {
     flexDirection: 'row', alignItems: 'center',
@@ -1150,12 +1132,12 @@ const styles = StyleSheet.create({
   // Direção
   direcaoRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   direcaoBtn: {
-    flex: 1, borderWidth: 1.5, borderColor: Colors.Primary, borderRadius: 12,
-    paddingVertical: 12, paddingHorizontal: 8,
-    alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6,
+    flex: 1, borderWidth: 1.5, borderColor: Colors.Primary, borderRadius: 14,
+    paddingVertical: 18, paddingHorizontal: 12,
+    alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 10,
   },
   direcaoBtnAtivo:     { backgroundColor: Colors.Primary },
-  direcaoBtnText:      { fontSize: 13, fontWeight: '600', color: Colors.Primary, textAlign: 'center' },
+  direcaoBtnText:      { fontSize: 13, fontWeight: '600', color: Colors.Primary, textAlign: 'center', lineHeight: 18, flex: 1 },
   direcaoBtnTextAtivo: { color: '#fff' },
 
   // Card de rota (step 2)
@@ -1235,8 +1217,8 @@ const styles = StyleSheet.create({
   // Bloqueio
   bloqueioContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   bloqueioIcon:      { fontSize: 56, marginBottom: 16 },
-  bloqueioTitulo:    { fontSize: 20, fontWeight: '800', color: Colors.Primary, marginBottom: 12, textAlign: 'center' },
-  bloqueioTexto:     { fontSize: 15, color: Colors.TextMuted, textAlign: 'center', lineHeight: 22 },
+  bloqueioTitulo:    { fontSize: 20, fontWeight: '800', color: Colors.TextLight, marginBottom: 12, textAlign: 'center' },
+  bloqueioTexto:     { fontSize: 15, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 22 },
 
   // Endereço salvo
   enderecoHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, marginTop: 4 },
@@ -1256,7 +1238,6 @@ const styles = StyleSheet.create({
   enderecoInput:      { flex: 1, fontSize: 14, color: Colors.Text, paddingVertical: 12 },
   enderecoInputError: { borderColor: Colors.Error },
   enderecoInputClear: { padding: 4 },
-  gpsBtn:             { width: 46, height: 46, borderRadius: 12, backgroundColor: Colors.Primary, alignItems: 'center', justifyContent: 'center' },
   enderecoConfirmado: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.Success + '15', borderRadius: 8, padding: 8, marginBottom: 4 },
   enderecoConfirmadoText: { flex: 1, fontSize: 12, color: Colors.Success, fontWeight: '600' },
   sugestoesContainer: { borderWidth: 1, borderColor: '#D9C9F0', borderRadius: 12, backgroundColor: Colors.Surface, marginBottom: 8, overflow: 'hidden' },

@@ -57,7 +57,7 @@ public class Veiculo {
     @Column(name = "tem_bauleto")
     private Boolean temBauleto;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "motorista_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "motorista_id", nullable = false)
     private Motorista motorista;
 }

@@ -490,8 +490,8 @@ export default function SolicitarScreen() {
     return true;
   });
 
-  const filtrosAtivos = (filtroData ? 1 : 0) + (filtroHora ? 1 : 0);
-  const limparFiltros = () => { setFiltroData(''); setFiltroHora(''); };
+  const filtrosAtivos = (filtroData ? 1 : 0) + (filtroHora ? 1 : 0) + (direcaoBusca !== 'IDA' ? 1 : 0);
+  const limparFiltros = () => { setFiltroData(''); setFiltroHora(''); setDirecaoBusca('IDA'); };
 
   // ── Autocomplete do modal ──────────────────────────────────────────────────
 
@@ -885,6 +885,21 @@ export default function SolicitarScreen() {
         <View style={styles.modalHandle} />
         <Text style={styles.modalTitulo}>Filtrar caronas</Text>
 
+        <Text style={styles.filterLabel}>Sentido</Text>
+        <View style={styles.sentidoRow}>
+          {(['IDA', 'VOLTA'] as const).map((v) => (
+            <TouchableOpacity
+              key={v}
+              style={[styles.sentidoBtn, direcaoBusca === v && styles.sentidoBtnAtivo]}
+              onPress={() => setDirecaoBusca(v)}
+            >
+              <Text style={[styles.sentidoBtnText, direcaoBusca === v && styles.sentidoBtnTextAtivo]}>
+                {v === 'IDA' ? 'Ida (casa → faculdade)' : 'Volta (faculdade → casa)'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <Text style={styles.filterLabel}>Data</Text>
         <TouchableOpacity style={styles.filterInput} onPress={() => setCalendarVisible(true)}>
           <Text style={filtroData ? styles.filterInputText : styles.filterInputPlaceholder}>
@@ -929,7 +944,17 @@ export default function SolicitarScreen() {
           <TouchableOpacity style={styles.limparBtn} onPress={() => { limparFiltros(); setFiltroModalVisible(false); }}>
             <Text style={styles.limparBtnText}>Limpar</Text>
           </TouchableOpacity>
-          <Button title="Aplicar" onPress={() => setFiltroModalVisible(false)} variant="primary" style={styles.aplicarBtn} />
+          <Button
+            title="Aplicar"
+            onPress={() => {
+              setFiltroModalVisible(false);
+              if (enderecoLivreLat != null && enderecoLivreLng != null) {
+                buscarCaronas(enderecoLivreLat, enderecoLivreLng, direcaoBusca);
+              }
+            }}
+            variant="primary"
+            style={styles.aplicarBtn}
+          />
         </View>
       </BottomSheet>
 
@@ -1173,6 +1198,12 @@ const styles = StyleSheet.create({
 
   // Filtros
   filterLabel: { fontSize: 13, fontWeight: '600', color: Colors.Text, marginBottom: 6 },
+  sentidoRow:  { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  sentidoBtn:  { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
+                 borderWidth: 1.5, borderColor: Colors.SurfaceLight, backgroundColor: Colors.SurfaceLight },
+  sentidoBtnAtivo: { borderColor: Colors.Primary, backgroundColor: Colors.Primary + '12' },
+  sentidoBtnText:  { fontSize: 12, fontWeight: '600', color: Colors.TextMuted, textAlign: 'center' },
+  sentidoBtnTextAtivo: { color: Colors.Primary },
   filterInput: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1.5, borderColor: '#ddd', borderRadius: 12,

@@ -684,7 +684,7 @@ export default function PerfilScreen() {
           await logout();
           router.replace('/(auth)/login');
         }}
-        shareProfile={user.username ? { username: user.username, nome: user.nome } : undefined}
+        shareProfile={{ username: user.username || String(user.id), nome: user.nome }}
         onShowShare={() => setShowShare(true)}
       >
         <SidebarItem
@@ -695,7 +695,7 @@ export default function PerfilScreen() {
       </Sidebar>
 
       {/* Modal — compartilhar perfil */}
-      <Modal visible={showShare && !!user?.username} transparent animationType="fade" onRequestClose={() => setShowShare(false)}>
+      <Modal visible={showShare} transparent animationType="fade" onRequestClose={() => setShowShare(false)}>
         <View style={styles.sidebarConfirmOverlay} pointerEvents="auto">
           <View style={styles.sidebarConfirmCard}>
             <TouchableOpacity style={styles.sidebarShareClose} onPress={() => setShowShare(false)}>
@@ -703,11 +703,11 @@ export default function PerfilScreen() {
             </TouchableOpacity>
             <Text style={styles.sidebarConfirmTitle}>Compartilhar perfil</Text>
             <Text style={[styles.sidebarConfirmMsg, { color: Colors.Primary, fontWeight: '600', marginBottom: 20 }]}>
-              @{user?.username}
+              @{user?.username || user?.id}
             </Text>
             <View style={styles.sidebarQrWrap}>
               <QRCode
-                value={`uniride://perfil/${user?.username}`}
+                value={`uniride://perfil/${user?.username || user?.id}`}
                 size={160}
                 color={Colors.Primary}
                 backgroundColor="#fff"
@@ -716,7 +716,7 @@ export default function PerfilScreen() {
             <View style={styles.sidebarLinkBox}>
               <Ionicons name="link-outline" size={14} color={Colors.TextMuted} />
               <Text style={styles.sidebarLinkText} numberOfLines={1}>
-                uniride://perfil/{user?.username}
+                uniride://perfil/{user?.username || user?.id}
               </Text>
             </View>
             <TouchableOpacity
@@ -724,7 +724,7 @@ export default function PerfilScreen() {
               onPress={async () => {
                 try {
                   await Share.share({
-                    message: `Confira o perfil de ${user?.nome} no UniRide!\nuniride://perfil/${user?.username}`,
+                    message: `Confira o perfil de ${user?.nome} no UniRide!\nuniride://perfil/${user?.username || user?.id}`,
                     title: `Perfil de ${user?.nome}`,
                   });
                 } catch {}

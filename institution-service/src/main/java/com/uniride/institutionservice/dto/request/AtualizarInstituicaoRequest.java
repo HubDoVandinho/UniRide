@@ -12,6 +12,11 @@ public class AtualizarInstituicaoRequest {
     @Size(max = 20, message = "Sigla deve ter no máximo 20 caracteres")
     private String sigla;
 
+    @Size(max = 100, message = "Domínio deve ter no máximo 100 caracteres")
+    @Pattern(regexp = "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+             message = "Domínio inválido. Ex: fatec.edu.br")
+    private String dominioEmail;
+
     @Size(max = 50, message = "Tipo deve ter no máximo 50 caracteres")
     private String tipo;
 
@@ -27,4 +32,7 @@ public class AtualizarInstituicaoRequest {
 
     @Pattern(regexp = "^[0-9]{8}$", message = "CEP inválido")
     private String cep;
+
+    private Double lat;
+    private Double lng;
 }

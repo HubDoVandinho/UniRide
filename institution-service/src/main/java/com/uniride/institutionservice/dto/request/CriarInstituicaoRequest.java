@@ -13,7 +13,7 @@ public class CriarInstituicaoRequest {
     @Size(max = 20, message = "Sigla deve ter no máximo 20 caracteres")
     private String sigla;
 
-    @NotBlank(message = "Domínio de e-mail é obrigatório")
+    // Opcional no cadastro manual — obrigatório apenas para que o domínio seja validado no cadastro de usuários
     @Size(max = 100, message = "Domínio deve ter no máximo 100 caracteres")
     @Pattern(regexp = "^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
              message = "Domínio inválido. Ex: fatec.edu.br")
@@ -36,4 +36,7 @@ public class CriarInstituicaoRequest {
 
     @Pattern(regexp = "^[0-9]{8}$", message = "CEP inválido")
     private String cep;
+
+    private Double lat;
+    private Double lng;
 }

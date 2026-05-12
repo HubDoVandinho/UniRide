@@ -117,6 +117,20 @@ export default function EditarRotinaScreen() {
       showAlert('Atenção', 'Selecione o horário de saída.');
       return;
     }
+
+    // RN13 — nome único por motorista (exclui a própria rotina)
+    if (data.nome?.trim()) {
+      try {
+        const existentes = await rotinaService.listar();
+        const nomeNovo = data.nome.trim().toLowerCase();
+        const duplicado = existentes.some(r => r.id !== Number(id) && (r.nome ?? '').toLowerCase() === nomeNovo);
+        if (duplicado) {
+          showAlert('Nome já em uso', `Você já tem uma rotina chamada "${data.nome.trim()}". Escolha um nome diferente.`);
+          return;
+        }
+      } catch { /* ignora falha; backend também valida */ }
+    }
+
     setLoading(true);
     try {
       await rotinaService.atualizar(Number(id), {

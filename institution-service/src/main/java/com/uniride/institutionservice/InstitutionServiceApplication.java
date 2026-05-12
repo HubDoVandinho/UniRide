@@ -9,3 +9,6 @@ public class InstitutionServiceApplication {
         SpringApplication.run(InstitutionServiceApplication.class, args);
     }
 }
+
+
+

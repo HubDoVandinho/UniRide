@@ -3,6 +3,7 @@ package com.uniride.userservice.repository;
 import com.uniride.userservice.entity.Amizade;
 import com.uniride.userservice.enums.StatusAmizade;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -33,16 +34,45 @@ public interface AmizadeRepository extends JpaRepository<Amizade, Long> {
     // Lista amigos aceitos de um participante
     @Query("""
         SELECT a FROM Amizade a
+        JOIN FETCH a.solicitante
+        JOIN FETCH a.destinatario
         WHERE a.status = 'ACEITA'
           AND (a.solicitante.id = :id OR a.destinatario.id = :id)
     """)
     List<Amizade> findAmigosAceitos(@Param("id") Long id);
 
     // Solicitações recebidas pendentes
-    List<Amizade> findByDestinatarioIdAndStatus(Long destinatarioId, StatusAmizade status);
+    @Query("""
+        SELECT a FROM Amizade a
+        JOIN FETCH a.solicitante
+        JOIN FETCH a.destinatario
+        WHERE a.destinatario.id = :destinatarioId
+          AND a.status = :status
+    """)
+    List<Amizade> findByDestinatarioIdAndStatus(@Param("destinatarioId") Long destinatarioId,
+                                                @Param("status") StatusAmizade status);
 
     // Solicitações enviadas pendentes
-    List<Amizade> findBySolicitanteIdAndStatus(Long solicitanteId, StatusAmizade status);
+    @Query("""
+        SELECT a FROM Amizade a
+        JOIN FETCH a.solicitante
+        JOIN FETCH a.destinatario
+        WHERE a.solicitante.id = :solicitanteId
+          AND a.status = :status
+    """)
+    List<Amizade> findBySolicitanteIdAndStatus(@Param("solicitanteId") Long solicitanteId,
+                                               @Param("status") StatusAmizade status);
+
+    // Todas as solicitações enviadas (qualquer status, exceto ACEITA — essa vai para amigos)
+    @Query("""
+        SELECT a FROM Amizade a
+        JOIN FETCH a.solicitante
+        JOIN FETCH a.destinatario
+        WHERE a.solicitante.id = :solicitanteId
+          AND a.status <> 'ACEITA'
+        ORDER BY a.criadoEm DESC
+    """)
+    List<Amizade> findEnviadasNaoAceitas(@Param("solicitanteId") Long solicitanteId);
 
     // Verifica se já existe algum vínculo entre os dois (qualquer status)
     @Query("""
@@ -51,6 +81,17 @@ public interface AmizadeRepository extends JpaRepository<Amizade, Long> {
            OR (a.solicitante.id = :idB AND a.destinatario.id = :idA)
     """)
     boolean existeVinculo(@Param("idA") Long idA, @Param("idB") Long idB);
+
+    @Query("""
+        SELECT COUNT(a) FROM Amizade a
+        WHERE a.status = 'ACEITA'
+          AND (a.solicitante.id = :id OR a.destinatario.id = :id)
+    """)
+    long countAmigosAceitos(@Param("id") Long id);
+
+    @Modifying
+    @Query("DELETE FROM Amizade a WHERE a.solicitante.id = :id OR a.destinatario.id = :id")
+    void deleteAllByParticipanteId(@Param("id") Long id);
 
     // Lista todos os participantes da mesma instituição (para sugestão de amigos)
     @Query("""

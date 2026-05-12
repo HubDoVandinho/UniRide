@@ -5,6 +5,8 @@ import com.uniride.userservice.enums.TipoVeiculo;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data @Builder
 public class VeiculoResponse {
     private Long id;
@@ -21,4 +23,6 @@ public class VeiculoResponse {
     private Integer qtdPortas;
     private String cilindrada;
     private Boolean temBauleto;
+    private LocalDate validadeCnh;
+    private Boolean aprovadoAdmin;
 }

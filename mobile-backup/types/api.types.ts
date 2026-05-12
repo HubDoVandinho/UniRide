@@ -308,7 +308,7 @@ export interface CadastroPassageiroRequest {
   cpf: string;
   instituicaoId: number;
   necessidadesEspeciais?: string;
-  miniBiografia: string;
+  miniBiografia?: string;
   endereco: EnderecoPayload;
 }
 

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @DiscriminatorValue("MOTORISTA")
@@ -22,6 +24,6 @@ public class Motorista extends Participante {
     @Column(name = "total_caronas_oferecidas")
     private Integer totalCaronasOferecidas = 0;
 
-    @OneToOne(mappedBy = "motorista", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Veiculo veiculo;
+    @OneToMany(mappedBy = "motorista", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Veiculo> veiculos = new ArrayList<>();
 }

@@ -272,10 +272,11 @@ export default function EnderecosScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Novo Endereço</Text>
-              <TouchableOpacity onPress={fecharModal}>
-                <Text style={styles.modalClose}>✕</Text>
+              <TouchableOpacity onPress={fecharModal} style={styles.modalBackBtn}>
+                <Ionicons name="arrow-back" size={22} color="#fff" />
               </TouchableOpacity>
+              <Text style={styles.modalTitle}>Novo Endereço</Text>
+              <Text style={styles.modalSubtitle}>Informe os dados do endereço</Text>
             </View>
 
             <View style={styles.formCard}>
@@ -405,16 +406,16 @@ export default function EnderecosScreen() {
                   />
                 </View>
               </View>
+
+              <View style={styles.formDivider} />
+              <Button
+                title="Salvar endereço"
+                onPress={handleSubmit(adicionarEndereco)}
+                variant="primary"
+                loading={salvando}
+              />
             </View>
           </ScrollView>
-          <View style={styles.floatBar}>
-            <Button
-              title="Salvar endereço"
-              onPress={handleSubmit(adicionarEndereco)}
-              variant="primary"
-              loading={salvando}
-            />
-          </View>
         </SafeAreaView>
       </Modal>
       {/* FAB — Adicionar endereço */}
@@ -549,38 +550,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.Primary,
   },
-  modalSafeArea: {
-    flex: 1,
-    backgroundColor: Colors.SurfaceLight,
-  },
-  modalScroll: {
-    padding: 20,
-    paddingBottom: 8,
-    flexGrow: 1,
-  },
-  floatBar: {
-    padding: 20,
-    paddingTop: 12,
-    backgroundColor: Colors.SurfaceLight,
-    borderTopWidth: 1,
-    borderTopColor: Colors.Primary + '15',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.Primary,
-  },
-  modalClose: {
-    fontSize: 20,
-    color: Colors.TextMuted,
-    padding: 4,
-  },
+  modalSafeArea: { flex: 1, backgroundColor: Colors.Background },
+  modalScroll:   { padding: 20, flexGrow: 1 },
+  modalHeader:   { paddingBottom: 20 },
+  modalBackBtn:  { padding: 4, marginBottom: 8, alignSelf: 'flex-start' },
+  modalTitle:    { fontSize: 22, fontWeight: '800', color: Colors.TextLight },
+  modalSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   formCard: {
     backgroundColor: Colors.Surface,
     borderRadius: 20,

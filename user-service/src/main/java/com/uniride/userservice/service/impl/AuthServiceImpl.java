@@ -5,12 +5,15 @@ import com.uniride.userservice.dto.request.RefreshTokenRequest;
 import com.uniride.userservice.dto.response.AuthResponse;
 import com.uniride.userservice.entity.RefreshToken;
 import com.uniride.userservice.entity.Participante;
+import com.uniride.userservice.enums.StatusParticipante;
+import com.uniride.userservice.exception.ContaNaoConfirmadaException;
 import com.uniride.userservice.exception.CredenciaisInvalidasException;
 import com.uniride.userservice.exception.TokenInvalidoException;
 import com.uniride.userservice.repository.ParticipanteRepository;
 import com.uniride.userservice.repository.RefreshTokenRepository;
 import com.uniride.userservice.security.JwtService;
 import com.uniride.userservice.service.AuthService;
+import com.uniride.userservice.service.EmailService;
 import com.uniride.userservice.service.ParticipanteMapper;
 import com.uniride.userservice.service.RateLimitService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -35,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final ParticipanteMapper mapper;
     private final RateLimitService rateLimitService;
+    private final EmailService emailService;
 
     @Value("${jwt.expiration-ms}") private long expirationMs;
     @Value("${jwt.refresh-expiration-ms}") private long refreshExpirationMs;
@@ -42,23 +47,41 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse login(LoginRequest request, String ipOrigem) {
-        String email = request.getEmail().toLowerCase().trim();
+        final String loginRaw = request.getLogin().toLowerCase().trim();
 
         // Verifica rate limit ANTES de autenticar
-        rateLimitService.verificarBloqueio(email, ipOrigem);
+        rateLimitService.verificarBloqueio(loginRaw, ipOrigem);
 
-        Participante participante = participanteRepository.findAtivoByEmail(email)
+        // Aceita e-mail pessoal ou @username (com ou sem o @ na frente)
+        boolean isUsername = loginRaw.startsWith("@");
+        final String identificador = isUsername ? loginRaw.substring(1) : loginRaw;
+        boolean isEmail = !isUsername && identificador.contains("@");
+        Participante participante = (isEmail
+                ? participanteRepository.findByEmailPessoal(identificador)
+                : participanteRepository.findByUsername(identificador))
                 .orElseThrow(() -> {
-                    rateLimitService.registrarTentativa(email, ipOrigem, false);
+                    rateLimitService.registrarTentativa(loginRaw, ipOrigem, false);
                     return new CredenciaisInvalidasException();
                 });
 
+        // Senha verificada antes do status — não revelamos "conta existe" para senha errada
         if (!passwordEncoder.matches(request.getSenha(), participante.getSenhaHash())) {
-            rateLimitService.registrarTentativa(email, ipOrigem, false);
+            rateLimitService.registrarTentativa(identificador, ipOrigem, false);
             throw new CredenciaisInvalidasException();
         }
 
-        rateLimitService.registrarTentativa(email, ipOrigem, true);
+        // Senha correta: agora sim verificamos o status
+        if (participante.getStatus() == StatusParticipante.PENDENTE_VERIFICACAO) {
+            rateLimitService.registrarTentativa(identificador, ipOrigem, false);
+            throw new ContaNaoConfirmadaException();
+        }
+
+        if (participante.getStatus() != StatusParticipante.ATIVO) {
+            rateLimitService.registrarTentativa(identificador, ipOrigem, false);
+            throw new CredenciaisInvalidasException();
+        }
+
+        rateLimitService.registrarTentativa(identificador, ipOrigem, true);
 
         String accessToken = jwtService.gerarToken(participante);
         String refreshToken = criarRefreshToken(participante);
@@ -89,7 +112,10 @@ public class AuthServiceImpl implements AuthService {
         rt.setRevogado(true);
         refreshTokenRepository.save(rt);
 
-        Participante participante = rt.getParticipante();
+        // Recarrega via findById para garantir que o subtipo correto (Motorista/Passageiro)
+        // seja instanciado — evita que o proxy @ManyToOne retorne a classe-base Participante.
+        Participante participante = participanteRepository.findById(rt.getParticipante().getId())
+                .orElseThrow(TokenInvalidoException::new);
         String novoRefreshToken = criarRefreshToken(participante);
         String novoAccessToken = jwtService.gerarToken(participante);
 
@@ -109,6 +135,84 @@ public class AuthServiceImpl implements AuthService {
     public void logout(Long participanteId) {
         refreshTokenRepository.revogarTodosPorParticipante(participanteId);
         log.info("Logout: todos os refresh tokens revogados. participanteId={}", participanteId);
+    }
+
+    @Override
+    @Transactional
+    public void confirmarEmailInstitucional(String token) {
+        Participante participante = participanteRepository.findByTokenConfirmacao(token)
+                .orElseThrow(() -> new TokenInvalidoException());
+
+        if (participante.getTokenConfirmacaoExpiraEm() == null ||
+                participante.getTokenConfirmacaoExpiraEm().isBefore(LocalDateTime.now())) {
+            throw new TokenInvalidoException();
+        }
+
+        participante.setStatus(StatusParticipante.ATIVO);
+        participante.setVerificado(true);
+        participante.setTokenConfirmacao(null);
+        participante.setTokenConfirmacaoExpiraEm(null);
+        participanteRepository.save(participante);
+
+        log.info("E-mail institucional confirmado: participanteId={}", participante.getId());
+    }
+
+    @Override
+    @Transactional
+    public void solicitarRecuperacaoSenha(String email) {
+        // Por segurança: não revelamos se o e-mail existe ou não
+        participanteRepository
+                .findByEmailPessoalOrEmailInstitucional(email.toLowerCase().trim(), email.toLowerCase().trim())
+                .ifPresent(participante -> {
+                    String codigo = String.format("%06d", new Random().nextInt(1_000_000));
+                    participante.setTokenResetSenha(codigo);
+                    participante.setTokenResetSenhaExpiraEm(LocalDateTime.now().plusMinutes(15));
+                    participanteRepository.save(participante);
+                    emailService.enviarResetSenha(email.toLowerCase().trim(), participante.getNome(), codigo);
+                    log.info("Código de reset enviado para participanteId={}", participante.getId());
+                });
+    }
+
+    @Override
+    @Transactional
+    public void redefinirSenha(String codigo, String novaSenha) {
+        Participante participante = participanteRepository.findByTokenResetSenha(codigo)
+                .orElseThrow(() -> new TokenInvalidoException());
+
+        if (participante.getTokenResetSenhaExpiraEm() == null ||
+                participante.getTokenResetSenhaExpiraEm().isBefore(LocalDateTime.now())) {
+            throw new TokenInvalidoException();
+        }
+
+        participante.setSenhaHash(passwordEncoder.encode(novaSenha));
+        participante.setTokenResetSenha(null);
+        participante.setTokenResetSenhaExpiraEm(null);
+        participanteRepository.save(participante);
+
+        log.info("Senha redefinida: participanteId={}", participante.getId());
+    }
+
+    @Override
+    @Transactional
+    public void reenviarVerificacao(String email) {
+        // Por segurança: retorna 200 mesmo se o e-mail não existir ou já estiver ativo
+        participanteRepository
+                .findByEmailPessoalOrEmailInstitucional(email.toLowerCase().trim(), email.toLowerCase().trim())
+                .ifPresent(participante -> {
+                    if (participante.getStatus() != StatusParticipante.PENDENTE_VERIFICACAO) return;
+
+                    // Regenera token com validade de 48h
+                    participante.setTokenConfirmacao(java.util.UUID.randomUUID().toString().replace("-", ""));
+                    participante.setTokenConfirmacaoExpiraEm(LocalDateTime.now().plusHours(48));
+                    participanteRepository.save(participante);
+
+                    emailService.enviarConfirmacaoCadastro(
+                            participante.getEmailInstitucional(),
+                            participante.getNome(),
+                            participante.getTokenConfirmacao());
+
+                    log.info("Verificação reenviada: participanteId={}", participante.getId());
+                });
     }
 
     // Limpeza automática toda madrugada às 2h

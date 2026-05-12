@@ -132,7 +132,7 @@ export default function PreferenciasScreen() {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Ionicons name="arrow-back" size={22} color={Colors.Primary} />
+              <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
           <Text style={styles.title}>Preferências de viagem</Text>
@@ -141,98 +141,100 @@ export default function PreferenciasScreen() {
           </Text>
         </View>
 
-        {loadingInit ? (
-          <View style={styles.centered}>
-            <ActivityIndicator color={Colors.Primary} size="large" />
-          </View>
-        ) : (
-          <>
-            {/* ── Preferências globais ────────────────────────── */}
-            <View style={styles.chipsContainer}>
-              {tipos.map((tipo) => {
-                const selected = selecionadas.has(tipo.id);
-                return (
-                  <TouchableOpacity
-                    key={tipo.id}
-                    onPress={() => togglePreferencia(tipo.id)}
-                    style={[styles.chip, selected && styles.chipSelected]}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                      {tipo.nome}
-                    </Text>
-                    {selected && <Text style={styles.chipCheck}> ✓</Text>}
-                  </TouchableOpacity>
-                );
-              })}
+        <View style={styles.card}>
+          {loadingInit ? (
+            <View style={styles.centered}>
+              <ActivityIndicator color={Colors.Primary} size="large" />
             </View>
+          ) : (
+            <>
+              {/* ── Preferências globais ────────────────────────── */}
+              <View style={styles.chipsContainer}>
+                {tipos.map((tipo) => {
+                  const selected = selecionadas.has(tipo.id);
+                  return (
+                    <TouchableOpacity
+                      key={tipo.id}
+                      onPress={() => togglePreferencia(tipo.id)}
+                      style={[styles.chip, selected && styles.chipSelected]}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                        {tipo.nome}
+                      </Text>
+                      {selected && <Text style={styles.chipCheck}> ✓</Text>}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-            {/* ── Preferências personalizadas ─────────────────── */}
-            <View style={styles.customSection}>
-              <Text style={styles.customLabel}>Personalizadas</Text>
-              <Text style={styles.customSub}>
-                Crie suas próprias tags para exibir no perfil. Máximo de {MAX_CUSTOM}, com até {MAX_CHARS} caracteres cada.
-              </Text>
+              {/* ── Preferências personalizadas ─────────────────── */}
+              <View style={styles.customSection}>
+                <Text style={styles.customLabel}>Personalizadas</Text>
+                <Text style={styles.customSub}>
+                  Crie suas próprias tags para exibir no perfil. Máximo de {MAX_CUSTOM}, com até {MAX_CHARS} caracteres cada.
+                </Text>
 
-              {/* Chips das custom existentes */}
-              {customPrefs.length > 0 && (
-                <View style={styles.chipsContainer}>
-                  {customPrefs.map((pref) => (
-                    <View key={pref.id} style={styles.chipCustom}>
-                      <Text style={styles.chipCustomText}>{pref.nome}</Text>
-                      <TouchableOpacity
-                        onPress={() => removerCustom(pref)}
-                        disabled={removendo === pref.id}
-                        style={styles.chipRemoveBtn}
-                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                      >
-                        {removendo === pref.id
-                          ? <ActivityIndicator size={12} color={Colors.Primary} />
-                          : <Ionicons name="close" size={13} color={Colors.Primary} />}
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
+                {/* Chips das custom existentes */}
+                {customPrefs.length > 0 && (
+                  <View style={styles.chipsContainer}>
+                    {customPrefs.map((pref) => (
+                      <View key={pref.id} style={styles.chipCustom}>
+                        <Text style={styles.chipCustomText}>{pref.nome}</Text>
+                        <TouchableOpacity
+                          onPress={() => removerCustom(pref)}
+                          disabled={removendo === pref.id}
+                          style={styles.chipRemoveBtn}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          {removendo === pref.id
+                            ? <ActivityIndicator size={12} color={Colors.Primary} />
+                            : <Ionicons name="close" size={13} color={Colors.Primary} />}
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
 
-              {/* Campo para adicionar nova */}
-              {customPrefs.length < MAX_CUSTOM && (
-                <View style={styles.addRow}>
-                  <TextInput
-                    ref={inputRef}
-                    style={styles.addInput}
-                    value={novaCustom}
-                    onChangeText={(t) => setNovaCustom(t.slice(0, MAX_CHARS))}
-                    placeholder="Ex: Não fumo, Gosto de música..."
-                    placeholderTextColor="#999"
-                    maxLength={MAX_CHARS}
-                    returnKeyType="done"
-                    onSubmitEditing={adicionarCustom}
-                  />
-                  <Text style={styles.charCount}>{novaCustom.length}/{MAX_CHARS}</Text>
-                  <TouchableOpacity
-                    style={[styles.addBtn, (!novaCustom.trim() || criando) && styles.addBtnDisabled]}
-                    onPress={adicionarCustom}
-                    disabled={!novaCustom.trim() || criando}
-                  >
-                    {criando
-                      ? <ActivityIndicator size={16} color="#fff" />
-                      : <Ionicons name="add" size={20} color="#fff" />}
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </>
-        )}
+                {/* Campo para adicionar nova */}
+                {customPrefs.length < MAX_CUSTOM && (
+                  <View style={styles.addRow}>
+                    <TextInput
+                      ref={inputRef}
+                      style={styles.addInput}
+                      value={novaCustom}
+                      onChangeText={(t) => setNovaCustom(t.slice(0, MAX_CHARS))}
+                      placeholder="Ex: Não fumo, Gosto de música..."
+                      placeholderTextColor="#999"
+                      maxLength={MAX_CHARS}
+                      returnKeyType="done"
+                      onSubmitEditing={adicionarCustom}
+                    />
+                    <Text style={styles.charCount}>{novaCustom.length}/{MAX_CHARS}</Text>
+                    <TouchableOpacity
+                      style={[styles.addBtn, (!novaCustom.trim() || criando) && styles.addBtnDisabled]}
+                      onPress={adicionarCustom}
+                      disabled={!novaCustom.trim() || criando}
+                    >
+                      {criando
+                        ? <ActivityIndicator size={16} color="#fff" />
+                        : <Ionicons name="add" size={20} color="#fff" />}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
 
-        <Button
-          title="Salvar preferências"
-          onPress={salvar}
-          variant="primary"
-          loading={salvando}
-          disabled={loadingInit}
-          style={styles.saveButton}
-        />
+          <View style={styles.formDivider} />
+          <Button
+            title="Salvar preferências"
+            onPress={salvar}
+            variant="primary"
+            loading={salvando}
+            disabled={loadingInit}
+          />
+        </View>
       </ScrollView>
       {alertModal}
     </SafeAreaView>
@@ -240,16 +242,29 @@ export default function PreferenciasScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.SurfaceLight },
-  scroll:   { flexGrow: 1, padding: 20 },
+  safeArea: { flex: 1, backgroundColor: Colors.Background },
+  scroll:   { flexGrow: 1, padding: 20, paddingBottom: 24 },
 
-  header:    { marginBottom: 24 },
+  header:    { marginBottom: 20 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   backBtn:   { padding: 4 },
-  title:     { fontSize: 26, fontWeight: '800', color: Colors.Primary, marginBottom: 4 },
-  subtitle:  { fontSize: 14, color: Colors.TextMuted, lineHeight: 20 },
+  title:     { fontSize: 26, fontWeight: '800', color: Colors.TextLight, marginBottom: 4 },
+  subtitle:  { fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 20 },
 
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
+  card: {
+    backgroundColor: Colors.Surface,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+
+  formDivider: { height: 1, backgroundColor: Colors.Primary + '20', marginVertical: 16 },
+
+  centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
 
   chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
 
@@ -274,5 +289,4 @@ const styles = StyleSheet.create({
   addBtn:        { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.Primary, alignItems: 'center', justifyContent: 'center' },
   addBtnDisabled:{ opacity: 0.4 },
 
-  saveButton: { marginTop: 8 },
 });

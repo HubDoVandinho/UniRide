@@ -13,7 +13,7 @@ public class InstituicaoMapper {
         return Instituicao.builder()
                 .nome(req.getNome().trim())
                 .sigla(req.getSigla() != null ? req.getSigla().trim().toUpperCase() : null)
-                .dominioEmail(req.getDominioEmail().trim().toLowerCase())
+                .dominioEmail(req.getDominioEmail() != null ? req.getDominioEmail().trim().toLowerCase() : null)
                 .tipo(req.getTipo())
                 .rua(req.getRua())
                 .numero(req.getNumero())
@@ -21,6 +21,8 @@ public class InstituicaoMapper {
                 .cidade(req.getCidade().trim())
                 .estado(req.getEstado().trim().toUpperCase())
                 .cep(req.getCep())
+                .lat(req.getLat())
+                .lng(req.getLng())
                 .build();
     }
 
@@ -30,6 +32,7 @@ public class InstituicaoMapper {
                 .nome(i.getNome())
                 .sigla(i.getSigla())
                 .dominioEmail(i.getDominioEmail())
+                .codigoEmec(i.getCodigoEmec())
                 .tipo(i.getTipo())
                 .rua(i.getRua())
                 .numero(i.getNumero())
@@ -37,6 +40,8 @@ public class InstituicaoMapper {
                 .cidade(i.getCidade())
                 .estado(i.getEstado())
                 .cep(i.getCep())
+                .lat(i.getLat())
+                .lng(i.getLng())
                 .status(i.getStatus())
                 .criadoEm(i.getCriadoEm())
                 .atualizadoEm(i.getAtualizadoEm())
@@ -46,6 +51,7 @@ public class InstituicaoMapper {
     public void atualizar(Instituicao instituicao, AtualizarInstituicaoRequest req) {
         if (req.getNome() != null) instituicao.setNome(req.getNome().trim());
         if (req.getSigla() != null) instituicao.setSigla(req.getSigla().trim().toUpperCase());
+        if (req.getDominioEmail() != null) instituicao.setDominioEmail(req.getDominioEmail().trim().toLowerCase());
         if (req.getTipo() != null) instituicao.setTipo(req.getTipo());
         if (req.getRua() != null) instituicao.setRua(req.getRua());
         if (req.getNumero() != null) instituicao.setNumero(req.getNumero());
@@ -53,5 +59,7 @@ public class InstituicaoMapper {
         if (req.getCidade() != null) instituicao.setCidade(req.getCidade().trim());
         if (req.getEstado() != null) instituicao.setEstado(req.getEstado().trim().toUpperCase());
         if (req.getCep() != null) instituicao.setCep(req.getCep());
+        if (req.getLat() != null) instituicao.setLat(req.getLat());
+        if (req.getLng() != null) instituicao.setLng(req.getLng());
     }
 }

@@ -81,6 +81,18 @@ public class AmizadeController {
         return ResponseEntity.ok(ApiResponse.ok("Amizade removida."));
     }
 
+    /**
+     * DELETE /api/v1/amizades/{id}/cancelar
+     * Cancela solicitação pendente enviada pelo próprio usuário.
+     */
+    @DeleteMapping("/api/v1/amizades/{id}/cancelar")
+    public ResponseEntity<ApiResponse<Void>> cancelarSolicitacao(
+            @RequestHeader("Authorization") String bearer,
+            @PathVariable Long id) {
+        amizadeService.cancelarSolicitacao(id, extrairId(bearer));
+        return ResponseEntity.ok(ApiResponse.ok("Solicitação cancelada."));
+    }
+
     // ── Listagens ─────────────────────────────────────────────────────────────
 
     /**
@@ -107,13 +119,13 @@ public class AmizadeController {
 
     /**
      * GET /api/v1/amizades/enviadas
-     * Lista solicitações que o usuário enviou e ainda estão pendentes.
+     * Lista todas as solicitações enviadas pelo usuário (pendentes e recusadas).
      */
     @GetMapping("/api/v1/amizades/enviadas")
     public ResponseEntity<ApiResponse<List<AmizadeResponse>>> listarEnviadas(
             @RequestHeader("Authorization") String bearer) {
         return ResponseEntity.ok(ApiResponse.ok("Solicitações enviadas.",
-                amizadeService.listarPendentesEnviadas(extrairId(bearer))));
+                amizadeService.listarTodasEnviadas(extrairId(bearer))));
     }
 
     // ── Perfil público e sugestões ────────────────────────────────────────────
@@ -124,9 +136,48 @@ public class AmizadeController {
      */
     @GetMapping("/api/v1/participantes/{id}/perfil")
     public ResponseEntity<ApiResponse<PerfilPublicoResponse>> perfilPublico(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String bearer) {
         return ResponseEntity.ok(ApiResponse.ok("Perfil encontrado.",
-                amizadeService.buscarPerfilPublico(id)));
+                amizadeService.buscarPerfilPublico(id, extrairId(bearer))));
+    }
+
+    /**
+     * GET /api/v1/participantes/by-username/{username}/perfil
+     * Perfil público via username — usado pelo deep link uniride://perfil/{username}.
+     */
+    @GetMapping("/api/v1/participantes/by-username/{username}/perfil")
+    public ResponseEntity<ApiResponse<PerfilPublicoResponse>> perfilPublicoPorUsername(
+            @PathVariable String username,
+            @RequestHeader("Authorization") String bearer) {
+        return ResponseEntity.ok(ApiResponse.ok("Perfil encontrado.",
+                amizadeService.buscarPerfilPublicoPorUsername(username, extrairId(bearer))));
+    }
+
+    /**
+     * GET /api/v1/participantes/{id}/amigos
+     * Lista os amigos de outro participante.
+     * Retorna 403 se o requester não for amigo do target.
+     */
+    @GetMapping("/api/v1/participantes/{id}/amigos")
+    public ResponseEntity<ApiResponse<List<PerfilPublicoResponse>>> listarAmigosDeOutroUsuario(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String bearer) {
+        return ResponseEntity.ok(ApiResponse.ok("Amigos listados.",
+                amizadeService.listarAmigosDeOutroUsuario(id, extrairId(bearer))));
+    }
+
+    /**
+     * GET /api/v1/participantes/buscar?termo=X
+     * Busca participantes por nome dentro da própria instituição.
+     * Retorna statusAmizade e amizadeId embutidos em cada resultado.
+     */
+    @GetMapping("/api/v1/participantes/buscar")
+    public ResponseEntity<ApiResponse<List<PerfilPublicoResponse>>> buscar(
+            @RequestHeader("Authorization") String bearer,
+            @RequestParam String termo) {
+        return ResponseEntity.ok(ApiResponse.ok("Busca realizada.",
+                amizadeService.buscarNaInstituicao(extrairId(bearer), termo)));
     }
 
     /**
@@ -149,9 +200,19 @@ public class AmizadeController {
      */
     @GetMapping("/api/v1/amizades/sao-amigos")
     public ResponseEntity<SaoAmigosResponse> saoAmigos(
-            @RequestParam Long a,
-            @RequestParam Long b) {
-        return ResponseEntity.ok(amizadeService.verificarAmizade(a, b));
+            @RequestParam("idA") Long idA,
+            @RequestParam("idB") Long idB) {
+        return ResponseEntity.ok(amizadeService.verificarAmizade(idA, idB));
+    }
+
+    /**
+     * GET /api/v1/participantes/{id}/perfil-info
+     * Endpoint interno para o ride-service obter nome e foto do passageiro.
+     * Retorna sem wrapper ApiResponse para facilitar deserialização via Feign.
+     */
+    @GetMapping("/api/v1/participantes/{id}/perfil-info")
+    public ResponseEntity<PerfilPublicoResponse> perfilInfo(@PathVariable Long id) {
+        return ResponseEntity.ok(amizadeService.buscarPerfilPublico(id, null));
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

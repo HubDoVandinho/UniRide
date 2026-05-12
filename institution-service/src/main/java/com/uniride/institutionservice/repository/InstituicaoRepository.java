@@ -14,6 +14,8 @@ public interface InstituicaoRepository extends JpaRepository<Instituicao, Long> 
 
     boolean existsByDominioEmail(String dominioEmail);
 
+    boolean existsByCodigoEmec(String codigoEmec);
+
     boolean existsByNomeIgnoreCase(String nome);
 
     Optional<Instituicao> findByDominioEmailAndStatus(String dominioEmail, StatusInstituicao status);

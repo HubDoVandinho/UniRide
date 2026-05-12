@@ -12,6 +12,9 @@ public class Endereco {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 60)
+    private String nome;
+
     @Column(nullable = false, length = 200)
     private String rua;
 
@@ -29,6 +32,13 @@ public class Endereco {
 
     @Column(nullable = false, length = 2)
     private String estado;
+
+    // Coordenadas geocodificadas no momento do cadastro (via Nominatim no frontend)
+    @Column(name = "lat")
+    private Double lat;
+
+    @Column(name = "lng")
+    private Double lng;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "participante_id", nullable = false)

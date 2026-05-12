@@ -23,8 +23,13 @@ public class Instituicao {
     @Column(name = "sigla", length = 20)
     private String sigla;
 
-    @Column(name = "dominio_email", nullable = false, unique = true, length = 100)
+    // Preenchido manualmente pelo admin — e-MEC não fornece esse dado
+    @Column(name = "dominio_email", unique = true, length = 100)
     private String dominioEmail;
+
+    // Código único da IES no e-MEC (importado); null para registros manuais
+    @Column(name = "codigo_emec", unique = true, length = 20)
+    private String codigoEmec;
 
     @Column(name = "tipo", length = 50)
     private String tipo; // ex: Faculdade, Universidade, Instituto Federal
@@ -47,6 +52,13 @@ public class Instituicao {
 
     @Column(length = 8)
     private String cep;
+
+    // Coordenadas geográficas do campus (preenchidas pelo admin)
+    @Column(name = "lat")
+    private Double lat;
+
+    @Column(name = "lng")
+    private Double lng;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

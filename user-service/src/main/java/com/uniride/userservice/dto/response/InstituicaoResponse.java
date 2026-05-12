@@ -14,4 +14,6 @@ public class InstituicaoResponse {
     private String bairro;
     private String cep;
     private String estado;
+    private Double lat;
+    private Double lng;
 }

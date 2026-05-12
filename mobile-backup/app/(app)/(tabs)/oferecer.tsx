@@ -102,6 +102,7 @@ function MotoristaOfereceScreen() {
   const [filtroModalVisible, setFiltroModalVisible] = useState(false);
   const [filtroData, setFiltroData] = useState('');
   const [filtroHora, setFiltroHora] = useState('');
+  const [filtroDirecao, setFiltroDirecao] = useState<'' | 'IDA' | 'VOLTA'>('');
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [timePickerValue, setTimePickerValue] = useState(new Date());
@@ -152,12 +153,13 @@ function MotoristaOfereceScreen() {
       const iso = typeof c.data === 'string' ? c.data : String(c.data);
       if (filtroData && iso !== filtroData) return false;
       if (filtroHora && !c.horarioSaida.startsWith(filtroHora)) return false;
+      if (filtroDirecao && c.direcao !== filtroDirecao) return false;
       return true;
     });
 
-  const filtrosAtivos = (filtroData ? 1 : 0) + (filtroHora ? 1 : 0);
+  const filtrosAtivos = (filtroData ? 1 : 0) + (filtroHora ? 1 : 0) + (filtroDirecao ? 1 : 0);
 
-  const limparFiltros = () => { setFiltroData(''); setFiltroHora(''); };
+  const limparFiltros = () => { setFiltroData(''); setFiltroHora(''); setFiltroDirecao(''); };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -309,6 +311,21 @@ function MotoristaOfereceScreen() {
       <BottomSheet visible={filtroModalVisible} onClose={() => setFiltroModalVisible(false)}>
         <Text style={styles.modalTitulo}>Filtrar caronas</Text>
 
+        <Text style={styles.filterLabel}>Sentido</Text>
+        <View style={styles.sentidoRow}>
+          {(['', 'IDA', 'VOLTA'] as const).map((v) => (
+            <TouchableOpacity
+              key={v}
+              style={[styles.sentidoBtn, filtroDirecao === v && styles.sentidoBtnAtivo]}
+              onPress={() => setFiltroDirecao(v)}
+            >
+              <Text style={[styles.sentidoBtnText, filtroDirecao === v && styles.sentidoBtnTextAtivo]}>
+                {v === '' ? 'Todos' : v === 'IDA' ? 'Ida' : 'Volta'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <Text style={styles.filterLabel}>Data</Text>
         <TouchableOpacity style={styles.filterInput} onPress={() => setCalendarVisible(true)}>
           <Text style={filtroData ? styles.filterInputText : styles.filterInputPlaceholder}>
@@ -445,6 +462,12 @@ const styles = StyleSheet.create({
   // Modal filtros
   modalTitulo:  { fontSize: 18, fontWeight: '800', color: Colors.Text, marginBottom: 20, textAlign: 'center' },
   filterLabel:  { fontSize: 13, fontWeight: '600', color: Colors.Text, marginBottom: 6 },
+  sentidoRow:   { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  sentidoBtn:   { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
+                  borderWidth: 1.5, borderColor: Colors.SurfaceLight, backgroundColor: Colors.SurfaceLight },
+  sentidoBtnAtivo: { borderColor: Colors.Primary, backgroundColor: Colors.Primary + '12' },
+  sentidoBtnText:  { fontSize: 13, fontWeight: '600', color: Colors.TextMuted },
+  sentidoBtnTextAtivo: { color: Colors.Primary },
   filterInput: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1.5, borderColor: '#ddd', borderRadius: 12,
